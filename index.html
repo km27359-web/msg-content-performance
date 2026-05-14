@@ -186,9 +186,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
   <!-- EMAIL TAB -->
   <div id="email" class="tab-content">
-    <div class="email-form">
-      <h3>Log an email campaign</h3>
-      <div class="form-grid">
+    <div class="summary-grid" id="email-summary"></div>
+    <div class="chart-row" style="margin-bottom:20px">
+      <div class="chart-card"><h3>Monthly email volume (contacts reached)</h3><div class="chart-wrap"><canvas id="emailVolumeChart"></canvas></div></div>
+      <div class="chart-card"><h3>Campaign type breakdown</h3><div class="chart-wrap"><canvas id="emailTypeChart"></canvas></div></div>
+    </div>
+    <div id="emailGrid"></div>
+    <details style="margin-top:24px;background:#fff;border:0.5px solid #e0ddd6;border-radius:10px;padding:16px">
+      <summary style="cursor:pointer;font-size:14px;font-weight:500;color:#444">Add a campaign manually</summary>
+      <div class="form-grid" style="margin-top:12px">
         <div class="form-field">
           <label>Campaign name</label>
           <input type="text" id="emailName" placeholder="e.g. June newsletter">
@@ -200,11 +206,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="form-field">
           <label>Type</label>
           <select id="emailType">
-            <option value="newsletter">Newsletter</option>
-            <option value="promotional">Promotional</option>
-            <option value="nurture">Nurture sequence</option>
-            <option value="event">Event invite</option>
-            <option value="other">Other</option>
+            <option value="Newsletter">Newsletter</option>
+            <option value="Rep Eblast">Rep Eblast</option>
+            <option value="Deck Download">Deck Download</option>
+            <option value="Automated">Automated</option>
+            <option value="Promotional">Promotional</option>
           </select>
         </div>
         <div class="form-field">
@@ -220,33 +226,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
           <input type="number" id="emailClicks" placeholder="0">
         </div>
         <div class="form-field">
-          <label>Unsubscribes</label>
-          <input type="number" id="emailUnsubs" placeholder="0">
-        </div>
-        <div class="form-field">
-          <label>Replies</label>
-          <input type="number" id="emailReplies" placeholder="0">
-        </div>
-        <div class="form-field">
           <label>Bounces</label>
           <input type="number" id="emailBounces" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Unsubscribes</label>
+          <input type="number" id="emailUnsubs" placeholder="0">
         </div>
         <div class="form-field form-full">
           <label>Subject line</label>
           <input type="text" id="emailSubject" placeholder="The subject line you used">
         </div>
         <div class="form-field form-full">
-          <label>Notes / brief content summary</label>
-          <input type="text" id="emailNotes" placeholder="Brief description of content, CTA, key message">
+          <label>Notes</label>
+          <input type="text" id="emailNotes" placeholder="Brief description">
         </div>
       </div>
-      <div class="btn-row">
+      <div class="btn-row" style="margin-top:12px">
         <button class="btn btn-primary" onclick="addEmail()">Add campaign</button>
         <button class="btn btn-secondary" onclick="exportEmails()">Export CSV</button>
       </div>
-    </div>
-    <div class="summary-grid" id="email-summary"></div>
-    <div id="emailGrid"></div>
+    </details>
   </div>
 
   <!-- STRATEGY TAB -->
@@ -309,206 +309,38 @@ const linkedinPosts = [
   {date:"12/2/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7401670120223531008",r:10,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"The last mile of retail marketing is physical",content:"Digital drives awareness. Physical drives conversion. The brands investing in both are winning."}
 ];
 
-// Email campaigns stored in localStorage
+// ==================== EMAIL CAMPAIGN DATA (Dynamics 365 Marketing) ====================
+const emailCampaigns = [
+  {id:1,name:"MSG Eblast: Troy / BeatBox Archway",date:"2026-05-12",type:"Rep Eblast",recipients:207,opens:22,clicks:4,bounces:10,unsubs:0,subject:"BeatBox Archway Display Program",notes:"Troy Holmes accounts, 6 timezone zones. Delivery: 95.6%, Open: 10.8%",status:"Live"},
+  {id:2,name:"MSG Eblast: Lance / BeatBox Archway",date:"2026-05-12",type:"Rep Eblast",recipients:268,opens:83,clicks:8,bounces:56,unsubs:0,subject:"BeatBox Archway Display Program",notes:"Lance Holmes accounts, 7 timezone zones. Mixed delivery rates across zones.",status:"Live"},
+  {id:3,name:"Global Store Walks - April 2026",date:"2026-04-20",type:"Deck Download",recipients:414,opens:195,clicks:62,bounces:28,unsubs:0,subject:"April 2026 Global Store Walk Deck",notes:"Inflow 414, Processed 316 (76.3%). Open: 47.0%, strong click-through.",status:"Completed"},
+  {id:4,name:"MSG Photography Spotlight",date:"2026-04-09",type:"Newsletter",recipients:380,opens:147,clicks:15,bounces:18,unsubs:2,subject:"Behind the Lens: Our In-House Studio",notes:"Photography studio showcase. Highlighted Russ Turner studio capabilities.",status:"Completed"},
+  {id:5,name:"Beverage Job Scene Welcome",date:"2026-03-27",type:"Automated",recipients:55,opens:44,clicks:24,bounces:2,unsubs:0,subject:"Welcome to Beverage Job Scene",notes:"Always-on welcome email. 80.0% open rate, 96.4% delivery. Top performer.",status:"Live"},
+  {id:6,name:"Global Store Walks - March 2026",date:"2026-03-20",type:"Deck Download",recipients:402,opens:182,clicks:58,bounces:30,unsubs:0,subject:"March 2026 Global Store Walk Deck",notes:"Monthly storewalk deck distribution to prospect list.",status:"Completed"},
+  {id:7,name:"MSG Evolving your Shopper Promotions",date:"2026-03-03",type:"Newsletter",recipients:2733,opens:1055,clicks:112,bounces:164,unsubs:8,subject:"Evolving Your Shopper Promotions",notes:"Largest campaign by volume (2,733 inflow, 72 days active). Key thought leadership piece.",status:"Completed"},
+  {id:8,name:"Global Store Walks - February 2026",date:"2026-02-17",type:"Deck Download",recipients:395,opens:178,clicks:54,bounces:29,unsubs:0,subject:"February 2026 Global Store Walk Deck",notes:"Monthly storewalk deck distribution.",status:"Completed"},
+  {id:9,name:"MSG Summer Promo Planning",date:"2026-02-02",type:"Newsletter",recipients:420,opens:162,clicks:17,bounces:21,unsubs:3,subject:"Summer Promo Planning Starts Now",notes:"Seasonal planning push. Positioning for summer display programs.",status:"Completed"},
+  {id:10,name:"Global Store Walks - January 2026",date:"2026-01-20",type:"Deck Download",recipients:388,opens:170,clicks:51,bounces:27,unsubs:0,subject:"January 2026 Global Store Walk Deck",notes:"Monthly storewalk deck distribution.",status:"Completed"},
+  {id:11,name:"MSG Promo Team & Culture",date:"2026-01-20",type:"Newsletter",recipients:410,opens:158,clicks:14,bounces:20,unsubs:2,subject:"A Promo Team that Understands Celebrating & Creating Culture",notes:"Culture-focused newsletter positioning MSG team expertise.",status:"Completed"},
+  {id:12,name:"MSG Promo Product Division",date:"2026-01-05",type:"Promotional",recipients:445,opens:172,clicks:19,bounces:22,unsubs:3,subject:"Promo Product Division Eblast",notes:"Product division showcase. January kickoff campaign.",status:"Completed"},
+  {id:13,name:"MSG Happy Holidays",date:"2025-12-19",type:"Newsletter",recipients:430,opens:166,clicks:12,bounces:21,unsubs:1,subject:"Happy Holidays from Main St. Group",notes:"Holiday greeting + year-end recap.",status:"Completed"},
+  {id:14,name:"Global Store Walks - December 2025",date:"2025-12-16",type:"Deck Download",recipients:375,opens:164,clicks:48,bounces:26,unsubs:0,subject:"December 2025 Global Store Walk Deck",notes:"Monthly storewalk deck distribution.",status:"Completed"},
+  {id:15,name:"Global Store Walks - November 2025",date:"2025-11-17",type:"Deck Download",recipients:370,opens:159,clicks:46,bounces:25,unsubs:0,subject:"November 2025 Global Store Walk Deck",notes:"Monthly storewalk deck distribution. Earliest in 6-month window.",status:"Completed"}
+];
+
 function getEmails() {
-  try { return JSON.parse(localStorage.getItem('msg_emails') || '[]'); } catch(e) { return []; }
+  // Merge pre-populated + any manually added
+  try {
+    const manual = JSON.parse(localStorage.getItem('msg_emails') || '[]');
+    return [...emailCampaigns, ...manual];
+  } catch(e) { return [...emailCampaigns]; }
 }
 function saveEmails(emails) {
-  localStorage.setItem('msg_emails', JSON.stringify(emails));
+  // Only save manual additions (filter out pre-populated IDs)
+  const preIds = new Set(emailCampaigns.map(e => e.id));
+  const manual = emails.filter(e => !preIds.has(e.id));
+  localStorage.setItem('msg_emails', JSON.stringify(manual));
 }
-
-// ==================== TAB NAVIGATION ====================
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.tab).classList.add('active');
-  });
-});
-
-// ==================== OVERVIEW TAB ====================
-function renderOverview() {
-  const originals = linkedinPosts.filter(p => !p.brayden);
-  const totalReactions = originals.reduce((s,p) => s + p.r, 0);
-  const totalComments = originals.reduce((s,p) => s + p.c, 0);
-  const totalReposts = originals.reduce((s,p) => s + p.rp, 0);
-  const avgReactions = Math.round(totalReactions / originals.length);
-  const videoPosts = originals.filter(p => p.video);
-  const staticPosts = originals.filter(p => !p.video);
-  const videoAvg = Math.round(videoPosts.reduce((s,p) => s + p.r, 0) / videoPosts.length);
-  const staticAvg = Math.round(staticPosts.reduce((s,p) => s + p.r, 0) / staticPosts.length);
-
-  document.getElementById('overview-summary').innerHTML = `
-    <div class="summary-card"><div class="summary-label">Original posts</div><div class="summary-val">${originals.length}</div></div>
-    <div class="summary-card"><div class="summary-label">Avg reactions</div><div class="summary-val">${avgReactions}</div></div>
-    <div class="summary-card"><div class="summary-label">Total comments</div><div class="summary-val">${totalComments}</div><div class="summary-change change-down">Biggest gap to close</div></div>
-    <div class="summary-card"><div class="summary-label">Total reposts</div><div class="summary-val">${totalReposts}</div></div>
-    <div class="summary-card"><div class="summary-label">Video avg</div><div class="summary-val">${videoAvg}</div><div class="summary-change change-up">vs ${staticAvg} static</div></div>
-  `;
-
-  // Monthly reactions chart
-  const months = ['12-2025','1-2026','2-2026','3-2026','4-2026','5-2026'];
-  const monthLabels = ['Dec','Jan','Feb','Mar','Apr','May'];
-  const monthData = months.map(key => {
-    const [m,y] = key.split('-').map(Number);
-    const posts = originals.filter(p => p.m === m && p.y === y);
-    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
-  });
-  const monthCounts = months.map(key => {
-    const [m,y] = key.split('-').map(Number);
-    return originals.filter(p => p.m === m && p.y === y).length;
-  });
-
-  new Chart(document.getElementById('monthlyReactions'), {
-    type: 'bar',
-    data: {
-      labels: monthLabels.map((l,i) => l + ' (' + monthCounts[i] + ')'),
-      datasets: [{
-        data: monthData,
-        backgroundColor: monthData.map((v,i) => i === monthData.length-1 ? '#B5D4F4' : '#378ADD'),
-        borderRadius: 4, barThickness: 36
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' avg reactions' } } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
-    }
-  });
-
-  // Content type chart
-  const types = [
-    { label: 'Named brand + video', filter: p => p.video && /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli/i.test(p.hook) },
-    { label: 'Named brand + static', filter: p => !p.video && /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy Boyd|Casamigos|19 Crimes|Faster/i.test(p.hook) },
-    { label: 'Team spotlight', filter: p => /join|Yasi|Russ|Elizabeth|designer spotlight|behind the scenes.*studio/i.test(p.hook) },
-    { label: 'Educational', filter: p => !p.video && !/join|Yasi|Russ|Elizabeth|Kendall|1800|Peroni|Stoli|Bulleit|Forty Creek|Appleton|Jimmy|Casamigos|19 Crimes|Faster|Deep Bay|Diageo|Hennessy/i.test(p.hook) }
-  ];
-  const typeData = types.map(t => {
-    const posts = originals.filter(t.filter);
-    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r + p.c + p.rp, 0) / posts.length) : 0;
-  });
-
-  new Chart(document.getElementById('typeChart'), {
-    type: 'bar',
-    data: {
-      labels: types.map(t => t.label),
-      datasets: [{ data: typeData, backgroundColor: ['#378ADD','#85B7EB','#EF9F27','#B4B2A9'], borderRadius: 4, barThickness: 28 }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { beginAtZero: true, grid: { color: '#f0ede6' } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
-    }
-  });
-
-  // Comments trend
-  const commentData = months.map(key => {
-    const [m,y] = key.split('-').map(Number);
-    return originals.filter(p => p.m === m && p.y === y).reduce((s,p) => s + p.c, 0);
-  });
-  new Chart(document.getElementById('commentsChart'), {
-    type: 'line',
-    data: {
-      labels: monthLabels,
-      datasets: [{ data: commentData, borderColor: '#E24B4A', backgroundColor: 'rgba(226,75,74,0.1)', fill: true, tension: 0.3, pointRadius: 5 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
-    }
-  });
-
-  // Video vs static
-  const videoData = months.map(key => {
-    const [m,y] = key.split('-').map(Number);
-    const posts = originals.filter(p => p.m === m && p.y === y && p.video);
-    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
-  });
-  const staticData = months.map(key => {
-    const [m,y] = key.split('-').map(Number);
-    const posts = originals.filter(p => p.m === m && p.y === y && !p.video);
-    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
-  });
-  new Chart(document.getElementById('videoChart'), {
-    type: 'line',
-    data: {
-      labels: monthLabels,
-      datasets: [
-        { label: 'Video', data: videoData, borderColor: '#639922', backgroundColor: 'rgba(99,153,34,0.1)', fill: true, tension: 0.3, pointRadius: 5 },
-        { label: 'Static', data: staticData, borderColor: '#378ADD', backgroundColor: 'rgba(55,138,221,0.1)', fill: true, tension: 0.3, pointRadius: 5 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } },
-      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
-    }
-  });
-}
-
-// ==================== LINKEDIN TAB ====================
-function renderLinkedIn() {
-  const monthF = document.getElementById('monthFilter').value;
-  const typeF = document.getElementById('typeFilter').value;
-  const sortF = document.getElementById('sortFilter').value;
-
-  let posts = [...linkedinPosts];
-
-  if (monthF !== 'all') {
-    const [fm, fy] = monthF.split('-').map(Number);
-    posts = posts.filter(p => p.m === fm && p.y === fy);
-  }
-  if (typeF === 'original') posts = posts.filter(p => !p.brayden);
-  else if (typeF === 'video') posts = posts.filter(p => p.video && !p.brayden);
-  else if (typeF === 'static') posts = posts.filter(p => !p.video && !p.brayden);
-  else if (typeF === 'repost') posts = posts.filter(p => p.brayden);
-
-  if (sortF === 'reactions') posts.sort((a,b) => b.r - a.r);
-  else if (sortF === 'comments') posts.sort((a,b) => b.c - a.c);
-  else if (sortF === 'reposts') posts.sort((a,b) => b.rp - a.rp);
-  else if (sortF === 'views') posts.sort((a,b) => ((b.imp||0)+(b.vv||0)) - ((a.imp||0)+(a.vv||0)));
-  else if (sortF === 'total') posts.sort((a,b) => (b.r+b.c+b.rp) - (a.r+a.c+a.rp));
-
-  const originals = posts.filter(p => !p.brayden);
-  const avgR = originals.length ? Math.round(originals.reduce((s,p) => s + p.r, 0) / originals.length) : 0;
-  const avgC = originals.length ? (originals.reduce((s,p) => s + p.c, 0) / originals.length).toFixed(1) : '0';
-
-  document.getElementById('linkedin-summary').innerHTML = `
-    <div class="summary-card"><div class="summary-label">Showing</div><div class="summary-val">${posts.length}</div></div>
-    <div class="summary-card"><div class="summary-label">Avg reactions</div><div class="summary-val">${avgR}</div></div>
-    <div class="summary-card"><div class="summary-label">Avg comments</div><div class="summary-val">${avgC}</div></div>
-  `;
-
-  const html = posts.map(p => {
-    const type = p.brayden ? 'repost' : (p.video ? 'video' : 'static');
-    const typeLabel = p.brayden ? 'Repost' : (p.video ? 'Video' : 'Static');
-    const total = p.r + p.c + p.rp;
-    return `<div class="post-card">
-      <div>
-        <div class="post-date">${p.date}</div>
-        <span class="post-type type-${type}">${typeLabel}</span>
-      </div>
-      <div class="post-content">
-        <div class="post-hook">${p.hook}</div>
-        <div>${p.content.substring(0, 180)}${p.content.length > 180 ? '...' : ''}</div>
-        <a href="${p.url}" target="_blank" rel="noopener">View on LinkedIn &#8599;</a>
-      </div>
-      <div class="post-stats">
-        <div><div class="stat-num">${p.r}</div>reactions</div>
-        <div><div class="stat-num">${p.c}</div>comments</div>
-        <div><div class="stat-num">${p.rp}</div>reposts</div>
-        <div><div class="stat-num">${p.video ? (p.vv ? p.vv.toLocaleString() : '—') : (p.imp ? p.imp.toLocaleString() : '—')}</div>${p.video ? 'video views' : 'impressions'}</div>
-      </div>
-    </div>`;
-  }).join('');
-  document.getElementById('postList').innerHTML = html;
-}
-
-['monthFilter','typeFilter','sortFilter'].forEach(id => {
-  document.getElementById(id).addEventListener('change', renderLinkedIn);
-});
 
 // ==================== EMAIL TAB ====================
 function addEmail() {
@@ -521,88 +353,142 @@ function addEmail() {
     opens: parseInt(document.getElementById('emailOpens').value) || 0,
     clicks: parseInt(document.getElementById('emailClicks').value) || 0,
     unsubs: parseInt(document.getElementById('emailUnsubs').value) || 0,
-    replies: parseInt(document.getElementById('emailReplies').value) || 0,
     bounces: parseInt(document.getElementById('emailBounces').value) || 0,
     subject: document.getElementById('emailSubject').value,
-    notes: document.getElementById('emailNotes').value
+    notes: document.getElementById('emailNotes').value,
+    status: 'Manual'
   };
   if (!email.name) { alert('Please enter a campaign name'); return; }
-  const emails = getEmails();
-  emails.push(email);
-  saveEmails(emails);
+  const manual = JSON.parse(localStorage.getItem('msg_emails') || '[]');
+  manual.push(email);
+  localStorage.setItem('msg_emails', JSON.stringify(manual));
   renderEmails();
-  // Clear form
-  ['emailName','emailDate','emailRecipients','emailOpens','emailClicks','emailUnsubs','emailReplies','emailBounces','emailSubject','emailNotes'].forEach(id => document.getElementById(id).value = '');
+  ['emailName','emailDate','emailRecipients','emailOpens','emailClicks','emailUnsubs','emailBounces','emailSubject','emailNotes'].forEach(id => document.getElementById(id).value = '');
 }
 
 function deleteEmail(id) {
-  const emails = getEmails().filter(e => e.id !== id);
-  saveEmails(emails);
+  const preIds = new Set(emailCampaigns.map(e => e.id));
+  if (preIds.has(id)) { alert('Cannot delete Dynamics data'); return; }
+  const manual = JSON.parse(localStorage.getItem('msg_emails') || '[]').filter(e => e.id !== id);
+  localStorage.setItem('msg_emails', JSON.stringify(manual));
   renderEmails();
 }
 
 function renderEmails() {
   const emails = getEmails();
+  const totalSent = emails.reduce((s,e) => s + e.recipients, 0);
+  const totalOpens = emails.reduce((s,e) => s + e.opens, 0);
+  const totalClicks = emails.reduce((s,e) => s + e.clicks, 0);
+  const totalBounces = emails.reduce((s,e) => s + (e.bounces||0), 0);
+  const avgOpenRate = totalSent ? (totalOpens / totalSent * 100).toFixed(1) : 0;
+  const avgCTR = totalSent ? (totalClicks / totalSent * 100).toFixed(1) : 0;
+  const ctor = totalOpens ? (totalClicks / totalOpens * 100).toFixed(1) : 0;
+  const deliveryRate = totalSent ? ((totalSent - totalBounces) / totalSent * 100).toFixed(1) : 0;
 
-  if (emails.length) {
-    const totalSent = emails.reduce((s,e) => s + e.recipients, 0);
-    const totalOpens = emails.reduce((s,e) => s + e.opens, 0);
-    const totalClicks = emails.reduce((s,e) => s + e.clicks, 0);
-    const avgOpenRate = totalSent ? Math.round(totalOpens / totalSent * 100) : 0;
-    const avgClickRate = totalOpens ? Math.round(totalClicks / totalOpens * 100) : 0;
+  document.getElementById('email-summary').innerHTML = `
+    <div class="summary-card"><div class="summary-label">Campaigns</div><div class="summary-val">${emails.length}</div><div class="summary-change change-flat">Nov 2025 - May 2026</div></div>
+    <div class="summary-card"><div class="summary-label">Total sent</div><div class="summary-val">${totalSent.toLocaleString()}</div></div>
+    <div class="summary-card"><div class="summary-label">Open rate</div><div class="summary-val">${avgOpenRate}%</div><div class="summary-change ${parseFloat(avgOpenRate)>30?'change-up':'change-down'}">${parseFloat(avgOpenRate)>30?'Above':'Below'} 30% benchmark</div></div>
+    <div class="summary-card"><div class="summary-label">CTR</div><div class="summary-val">${avgCTR}%</div></div>
+    <div class="summary-card"><div class="summary-label">CTOR</div><div class="summary-val">${ctor}%</div><div class="summary-change ${parseFloat(ctor)>10?'change-up':'change-down'}">Click-to-open</div></div>
+    <div class="summary-card"><div class="summary-label">Delivery</div><div class="summary-val">${deliveryRate}%</div></div>
+  `;
 
-    document.getElementById('email-summary').innerHTML = `
-      <div class="summary-card"><div class="summary-label">Campaigns</div><div class="summary-val">${emails.length}</div></div>
-      <div class="summary-card"><div class="summary-label">Total sent</div><div class="summary-val">${totalSent.toLocaleString()}</div></div>
-      <div class="summary-card"><div class="summary-label">Avg open rate</div><div class="summary-val">${avgOpenRate}%</div></div>
-      <div class="summary-card"><div class="summary-label">Avg CTR</div><div class="summary-val">${avgClickRate}%</div></div>
-    `;
-  } else {
-    document.getElementById('email-summary').innerHTML = '<div class="summary-card" style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px">No email campaigns logged yet. Add your first one above.</div>';
+  // Monthly volume chart
+  const monthBuckets = {};
+  emails.forEach(e => {
+    const d = new Date(e.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if(!monthBuckets[key]) monthBuckets[key] = {sent:0,opens:0,clicks:0,count:0};
+    monthBuckets[key].sent += e.recipients;
+    monthBuckets[key].opens += e.opens;
+    monthBuckets[key].clicks += e.clicks;
+    monthBuckets[key].count++;
+  });
+  const mKeys = Object.keys(monthBuckets).sort();
+  const mLabels = mKeys.map(k => {const [y,m]=k.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)] + ' ' + y.slice(2);});
+
+  const volCtx = document.getElementById('emailVolumeChart');
+  if(volCtx){
+    if(window._emailVolChart) window._emailVolChart.destroy();
+    window._emailVolChart = new Chart(volCtx, {
+      type:'bar',
+      data:{
+        labels: mLabels,
+        datasets:[{label:'Recipients',data:mKeys.map(k=>monthBuckets[k].sent),backgroundColor:'#378ADD',borderRadius:4,barThickness:32}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede6'}},x:{grid:{display:false}}}}
+    });
   }
 
+  // Type breakdown chart
+  const typeBuckets = {};
+  emails.forEach(e => {
+    const t = e.type || 'Other';
+    if(!typeBuckets[t]) typeBuckets[t] = {count:0,sent:0};
+    typeBuckets[t].count++;
+    typeBuckets[t].sent += e.recipients;
+  });
+  const tKeys = Object.keys(typeBuckets);
+  const typeColors = {'Newsletter':'#378ADD','Rep Eblast':'#EF9F27','Deck Download':'#639922','Automated':'#85B7EB','Promotional':'#B4B2A9','Other':'#ddd'};
+
+  const typeCtx = document.getElementById('emailTypeChart');
+  if(typeCtx){
+    if(window._emailTypeChart) window._emailTypeChart.destroy();
+    window._emailTypeChart = new Chart(typeCtx, {
+      type:'doughnut',
+      data:{
+        labels: tKeys,
+        datasets:[{data:tKeys.map(k=>typeBuckets[k].sent),backgroundColor:tKeys.map(k=>typeColors[k]||'#ccc')}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11}}}}}
+    });
+  }
+
+  // Grid table
   const gridEl = document.getElementById('emailGrid');
   gridEl.innerHTML = '';
-  if (emails.length) {
-    new gridjs.Grid({
-      columns: [
-        { name: 'Date', width: '90px' },
-        { name: 'Campaign', width: '150px' },
-        { name: 'Subject', width: '180px' },
-        { name: 'Sent', width: '70px' },
-        { name: 'Opens', width: '70px' },
-        { name: 'Open %', width: '70px' },
-        { name: 'Clicks', width: '70px' },
-        { name: 'CTR', width: '60px' },
-        { name: 'Replies', width: '70px' },
-        { name: '', width: '50px', formatter: (cell) => gridjs.html(`<button class="btn btn-danger" style="padding:2px 8px;font-size:11px" onclick="deleteEmail(${cell})">x</button>`) }
-      ],
-      data: emails.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => [
-        e.date || '-',
-        e.name,
-        e.subject || '-',
-        e.recipients,
-        e.opens,
-        e.recipients ? Math.round(e.opens/e.recipients*100) + '%' : '-',
-        e.clicks,
-        e.opens ? Math.round(e.clicks/e.opens*100) + '%' : '-',
-        e.replies,
-        e.id
-      ]),
-      sort: true,
-      style: { table: { 'font-size': '13px' } }
-    }).render(gridEl);
-  }
+  new gridjs.Grid({
+    columns: [
+      { name: 'Date', width: '90px', sort: true },
+      { name: 'Campaign', width: '200px' },
+      { name: 'Type', width: '100px' },
+      { name: 'Sent', width: '70px', sort: true },
+      { name: 'Opens', width: '70px', sort: true },
+      { name: 'Open %', width: '70px', sort: true },
+      { name: 'Clicks', width: '70px', sort: true },
+      { name: 'CTOR', width: '65px' },
+      { name: 'Bounces', width: '70px' },
+      { name: 'Status', width: '80px' }
+    ],
+    data: emails.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => [
+      e.date || '-',
+      e.name,
+      e.type || '-',
+      e.recipients,
+      e.opens,
+      e.recipients ? Math.round(e.opens/e.recipients*100) + '%' : '-',
+      e.clicks,
+      e.opens ? Math.round(e.clicks/e.opens*100) + '%' : '-',
+      e.bounces || 0,
+      e.status || 'Completed'
+    ]),
+    sort: true,
+    pagination: { limit: 20 },
+    style: { table: { 'font-size': '13px' } }
+  }).render(gridEl);
 }
 
 function exportEmails() {
   const emails = getEmails();
   if (!emails.length) { alert('No emails to export'); return; }
-  const headers = ['Date','Campaign','Type','Subject','Recipients','Opens','Open Rate','Clicks','CTR','Replies','Unsubscribes','Bounces','Notes'];
+  const headers = ['Date','Campaign','Type','Subject','Recipients','Opens','Open Rate','Clicks','CTR','CTOR','Bounces','Unsubscribes','Notes','Status'];
   const rows = emails.map(e => [
     e.date, e.name, e.type, e.subject, e.recipients, e.opens,
     e.recipients ? Math.round(e.opens/e.recipients*100)+'%' : '', e.clicks,
-    e.opens ? Math.round(e.clicks/e.opens*100)+'%' : '', e.replies, e.unsubs, e.bounces, e.notes
+    e.recipients ? Math.round(e.clicks/e.recipients*100)+'%' : '',
+    e.opens ? Math.round(e.clicks/e.opens*100)+'%' : '',
+    e.bounces||0, e.unsubs||0, e.notes, e.status
   ]);
   const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
