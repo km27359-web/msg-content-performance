@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MSG Content Performance Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/gridjs.umd.js" integrity="sha384-/XXDzxe4FsGiAe50i/u9pY/Vy/uX654MHB1xoc1BJNnH1WXHhqHga9g3q5tF4gj7" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridjs@5.0.2/dist/theme/mermaid.min.css" integrity="sha384-PYbSJuG0MYqoqkfJm+P+rYBpu2KcSJAq1MBqpKHKzp3PoEkO1h+EhNNh6SyF+6L" crossorigin="anonymous">
+<style>
+:root { color-scheme: light; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f7f4; color: #1a1a1a; line-height: 1.6; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+/* Header */
+.header { margin-bottom: 32px; }
+.header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.header p { font-size: 13px; color: #666; }
+.last-updated { font-size: 11px; color: #999; margin-top: 4px; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid #e0ddd6; margin-bottom: 24px; }
+.tab { padding: 10px 20px; font-size: 14px; font-weight: 500; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+.tab:hover { color: #444; }
+.tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Summary Cards */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.summary-card { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 14px 16px; }
+.summary-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.summary-val { font-size: 24px; font-weight: 600; }
+.summary-change { font-size: 11px; margin-top: 2px; }
+.change-up { color: #639922; }
+.change-down { color: #e24b4a; }
+.change-flat { color: #888; }
+
+/* Charts */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 16px; }
+.chart-card h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: #444; }
+.chart-wrap { position: relative; height: 220px; }
+
+/* Filter bar */
+.filter-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar select, .filter-bar input { padding: 6px 12px; border: 0.5px solid #d0cdc6; border-radius: 8px; font-size: 13px; background: #fff; }
+.filter-bar label { font-size: 12px; color: #666; }
+
+/* Post cards */
+.post-list { display: flex; flex-direction: column; gap: 10px; }
+.post-card { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: start; }
+.post-date { font-size: 13px; font-weight: 500; color: #444; }
+.post-type { font-size: 10px; padding: 2px 8px; border-radius: 6px; display: inline-block; margin-top: 4px; }
+.type-video { background: #eaf3de; color: #3b6d11; }
+.type-static { background: #e6f1fb; color: #185fa5; }
+.type-repost { background: #faeeda; color: #854f0b; }
+.post-content { font-size: 13px; color: #444; line-height: 1.5; }
+.post-content a { color: #185fa5; text-decoration: none; font-weight: 500; font-size: 12px; }
+.post-content a:hover { text-decoration: underline; }
+.post-hook { font-weight: 500; font-size: 14px; color: #1a1a1a; margin-bottom: 4px; }
+.post-stats { display: flex; gap: 14px; font-size: 12px; color: #666; white-space: nowrap; flex-direction: column; align-items: flex-end; text-align: right; }
+.stat-num { font-weight: 600; font-size: 16px; color: #1a1a1a; }
+
+/* Recommendations */
+.rec-card { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+.rec-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.rec-card p { font-size: 13px; color: #555; line-height: 1.6; }
+.rec-tag { font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 500; display: inline-block; margin-bottom: 8px; }
+.rec-critical { background: #fcebeb; color: #a32d2d; }
+.rec-high { background: #faeeda; color: #854f0b; }
+.rec-medium { background: #e6f1fb; color: #185fa5; }
+
+/* Email tracker */
+.email-table-wrap { overflow-x: auto; }
+.email-form { background: #fff; border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.email-form h3 { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: 11px; color: #666; font-weight: 500; }
+.form-field input, .form-field select { padding: 8px 10px; border: 0.5px solid #d0cdc6; border-radius: 8px; font-size: 13px; }
+.form-full { grid-column: 1 / -1; }
+.btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: #1a1a1a; color: #fff; }
+.btn-primary:hover { background: #333; }
+.btn-secondary { background: #fff; color: #1a1a1a; border: 0.5px solid #d0cdc6; }
+.btn-secondary:hover { background: #f5f4f0; }
+.btn-danger { background: #fcebeb; color: #a32d2d; border: 0.5px solid #f7c1c1; }
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .chart-row { grid-template-columns: 1fr; }
+  .post-card { grid-template-columns: 60px 1fr; }
+  .post-stats { flex-direction: row; align-items: center; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Grid.js overrides */
+.gridjs-wrapper { border-radius: 10px; border: 0.5px solid #e0ddd6; }
+.gridjs-table { font-size: 13px; }
+.gridjs-th { font-size: 12px; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>MSG Content Performance Hub</h1>
+    <p>LinkedIn company page analytics and email campaign tracking for Main St. Group</p>
+    <div class="last-updated">Last updated: May 14, 2026 | Data: Dec 2025 - May 2026</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="linkedin">LinkedIn posts</button>
+    <button class="tab" data-tab="email">Email campaigns</button>
+    <button class="tab" data-tab="strategy">Strategy</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="overview" class="tab-content active">
+    <div class="summary-grid" id="overview-summary"></div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Monthly avg reactions (originals only)</h3>
+        <div class="chart-wrap"><canvas id="monthlyReactions"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Engagement by content type</h3>
+        <div class="chart-wrap"><canvas id="typeChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>Comments trend (the gap to close)</h3>
+        <div class="chart-wrap"><canvas id="commentsChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Video vs static performance</h3>
+        <div class="chart-wrap"><canvas id="videoChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINKEDIN TAB -->
+  <div id="linkedin" class="tab-content">
+    <div class="filter-bar">
+      <div>
+        <label>Month</label>
+        <select id="monthFilter">
+          <option value="all">All months</option>
+          <option value="12-2025">Dec 2025</option>
+          <option value="1-2026">Jan 2026</option>
+          <option value="2-2026">Feb 2026</option>
+          <option value="3-2026">Mar 2026</option>
+          <option value="4-2026">Apr 2026</option>
+          <option value="5-2026">May 2026</option>
+        </select>
+      </div>
+      <div>
+        <label>Type</label>
+        <select id="typeFilter">
+          <option value="all">All types</option>
+          <option value="original">Originals only</option>
+          <option value="video">Video</option>
+          <option value="static">Static</option>
+          <option value="repost">Reposts</option>
+        </select>
+      </div>
+      <div>
+        <label>Sort</label>
+        <select id="sortFilter">
+          <option value="date">Newest first</option>
+          <option value="reactions">Most reactions</option>
+          <option value="comments">Most comments</option>
+          <option value="reposts">Most reposts</option>
+          <option value="views">Most views</option>
+          <option value="total">Total engagement</option>
+        </select>
+      </div>
+    </div>
+    <div class="summary-grid" id="linkedin-summary"></div>
+    <div class="post-list" id="postList"></div>
+  </div>
+
+  <!-- EMAIL TAB -->
+  <div id="email" class="tab-content">
+    <div class="email-form">
+      <h3>Log an email campaign</h3>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Campaign name</label>
+          <input type="text" id="emailName" placeholder="e.g. June newsletter">
+        </div>
+        <div class="form-field">
+          <label>Send date</label>
+          <input type="date" id="emailDate">
+        </div>
+        <div class="form-field">
+          <label>Type</label>
+          <select id="emailType">
+            <option value="newsletter">Newsletter</option>
+            <option value="promotional">Promotional</option>
+            <option value="nurture">Nurture sequence</option>
+            <option value="event">Event invite</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Recipients</label>
+          <input type="number" id="emailRecipients" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Opens</label>
+          <input type="number" id="emailOpens" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Clicks</label>
+          <input type="number" id="emailClicks" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Unsubscribes</label>
+          <input type="number" id="emailUnsubs" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Replies</label>
+          <input type="number" id="emailReplies" placeholder="0">
+        </div>
+        <div class="form-field">
+          <label>Bounces</label>
+          <input type="number" id="emailBounces" placeholder="0">
+        </div>
+        <div class="form-field form-full">
+          <label>Subject line</label>
+          <input type="text" id="emailSubject" placeholder="The subject line you used">
+        </div>
+        <div class="form-field form-full">
+          <label>Notes / brief content summary</label>
+          <input type="text" id="emailNotes" placeholder="Brief description of content, CTA, key message">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="addEmail()">Add campaign</button>
+        <button class="btn btn-secondary" onclick="exportEmails()">Export CSV</button>
+      </div>
+    </div>
+    <div class="summary-grid" id="email-summary"></div>
+    <div id="emailGrid"></div>
+  </div>
+
+  <!-- STRATEGY TAB -->
+  <div id="strategy" class="tab-content">
+    <div id="strategyContent"></div>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+const linkedinPosts = [
+  {date:"5/14/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7460682878482419712",r:6,c:0,rp:2,imp:0,vv:52,video:true,brayden:false,hook:"Start Thinking Halloween — Now",content:"Seasonal POS programs that hit stores in October need production locked by July. Design, approvals, structural engineering, and logistics all need to be moving right now."},
+  {date:"5/12/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7460320449638395904",r:11,c:3,rp:4,imp:372,vv:0,video:false,brayden:false,hook:"The display is only as good as the photo that sells it in",content:"We shot the full Jimmy Boyd product line in our studio, building a consistent visual library designed for every downstream use: product sheets, retail sell-in decks, and digital assets."},
+  {date:"5/9/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7452710345783238656",r:17,c:0,rp:3,imp:264,vv:0,video:false,brayden:false,hook:"Sometimes the most important design decisions are the ones you don't make",content:"The Appleton Estate cooler bag was designed to balance brand visibility with everyday utility. Clean lines, no over-branding."},
+  {date:"5/7/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7458146123157929984",r:14,c:0,rp:2,imp:0,vv:86,video:true,brayden:false,hook:"Your brief isn't just a starting point — it's the ceiling",content:"A vague POS brief doesn't give a design team room to be creative. It gives them room to guess. The best displays start with a brief that names the retailer, the placement, the brand constraint."},
+  {date:"5/5/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7457783756515336192",r:20,c:0,rp:4,imp:0,vv:177,video:true,brayden:false,hook:"Two minutes. That's how long it takes to go from box to floor-ready",content:"Peroni Nastro Azzurro needed a pre-packed shipper that matched their premium positioning without creating a 20-minute assembly job for store teams."},
+  {date:"5/2/2026",m:5,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7457421413981859841",r:13,c:0,rp:1,imp:0,vv:79,video:true,brayden:false,hook:"Forty Creek copper mug — the gift with purchase that becomes the brand moment",content:"A well-designed GWP extends the brand experience beyond the shelf. Forty Creek's copper mug does exactly that."},
+  {date:"4/29/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7454890411027857408",r:18,c:0,rp:2,imp:0,vv:221,video:true,brayden:false,hook:"Stoli x LA Dodgers retail display",content:"Stolichnaya teamed with the Los Angeles Dodgers for a retail display partnership. Named brand, named team, real in-store execution."},
+  {date:"4/28/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7455261653006372864",r:22,c:0,rp:2,imp:582,vv:0,video:false,brayden:false,hook:"The best displays do more than showcase bottles — they extend your brand story",content:"Retail displays that connect the packaging to the shelf experience create a cohesive brand moment the shopper can feel."},
+  {date:"4/16/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7450584630476517376",r:31,c:0,rp:4,imp:0,vv:0,video:false,brayden:false,hook:"1800 Tequila — knowing when to edit and when to go all-out",content:"It takes more than creativity to design the best displays. A strong brief and clear point of view from the client side are essential too. 1800 Tequila is a great example."},
+  {date:"4/16/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7450633121072508928",r:19,c:1,rp:4,imp:0,vv:195,video:true,brayden:false,hook:"1800 Tequila design process (video)",content:"Video companion showing the creative process behind the 1800 Tequila retail display, from concept to in-store execution."},
+  {date:"4/15/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7450541927579463681",r:29,c:3,rp:4,imp:0,vv:386,video:true,brayden:false,hook:"Designing for alc/bev brands in a retail setting is a discipline of its own",content:"Designs have to pop while working around retailer requirements and brand equities that can't be compromised. The best creative doesn't just look beautiful, it works hard."},
+  {date:"4/14/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7450173606598332417",r:31,c:0,rp:4,imp:783,vv:0,video:false,brayden:false,hook:"1800 Tequila retail display (static)",content:"The retail display we designed and produced for 1800 Tequila is a great example of how brief, client vision, and design skill can unlock truly innovative display design."},
+  {date:"4/9/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7449811947245420544",r:34,c:0,rp:2,imp:888,vv:0,video:false,brayden:false,hook:"Yasaman Rasteh ('Yasi') — designer spotlight",content:"Yasi has been a designer with MSG for 4+ years, 10+ years of experience. Background in project management and architecture. The design powerhouse behind some of our favorite retail displays."},
+  {date:"4/8/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7448012643124154368",r:19,c:0,rp:3,imp:595,vv:0,video:false,brayden:false,hook:"Behind the scenes in our studio — shooting Bulleit Bourbon",content:"Russ Turner at work in our in-house studio, capturing a project for Bulleit Bourbon. Professional cameras, lenses, lights, backgrounds and more."},
+  {date:"4/7/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7447301182898847744",r:15,c:0,rp:2,imp:470,vv:0,video:false,brayden:false,hook:"Casamigos for Mother's Day",content:"When the brief asks for premium but the timeline says yesterday — that's where production expertise matters. Casamigos Mother's Day display."},
+  {date:"4/2/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7445464244659146753",r:14,c:0,rp:3,imp:537,vv:170,video:true,brayden:false,hook:"Summer sell-in season is here",content:"Summer programs are already in motion. Brands locking in display strategy now are the ones that will own the floor in June and July."},
+  {date:"4/1/2026",m:4,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7445100199435259904",r:11,c:0,rp:2,imp:476,vv:0,video:false,brayden:false,hook:"MSG new project kickoff",content:"Behind the scenes of a new retail display project starting in our studio. Design, production, and photography all under one roof."},
+  {date:"3/26/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7444738349392789504",r:15,c:0,rp:2,imp:0,vv:256,video:true,brayden:false,hook:"19 Crimes Cali Gold trade kit — NYE opportunity",content:"When we think about the OND period, New Year's Eve is often overlooked yet it's the perfect moment for wine brands in the sparkling wine category."},
+  {date:"3/25/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7442925860988526594",r:11,c:1,rp:2,imp:883,vv:0,video:false,brayden:false,hook:"When premium promotional items are part of an OND strategy, not just a line item",content:"In the race to win OND, displays, POS, and price features matter at the shelf. The brands that truly win the season understand the full toolkit."},
+  {date:"3/24/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7442608866942554113",r:26,c:0,rp:0,imp:1100,vv:0,video:false,brayden:false,hook:"Elizabeth Rivers joins Main St. Group",content:"Elizabeth brings 12+ years of experience at a top global advertising agency. 360-degree marketing campaigns spanning advertising, branding, digital and shopper marketing."},
+  {date:"3/18/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7440389142141681664",r:39,c:6,rp:7,imp:0,vv:805,video:true,brayden:false,hook:"Kendall Jackson x NBA Retail Display",content:"When KJ scored a partnership with the NBA, they came to Main St. Group for retail displays that would extend the partnership to store shelves. Creative carte blanche to design something unique."},
+  {date:"3/17/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7439664340879921152",r:15,c:0,rp:2,imp:1012,vv:0,video:false,brayden:false,hook:"In-store execution is where brand investment either pays off or gets wasted",content:"The gap between what marketing plans and what actually appears on the shelf is where most retail programs lose their edge."},
+  {date:"3/11/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7437853473959727104",r:16,c:1,rp:3,imp:1271,vv:0,video:false,brayden:false,hook:"Retail display design is more than graphics — it's structural engineering",content:"Every display needs to survive shipping, sit level on any floor surface, hold weight, and still look premium. That's engineering, not just design."},
+  {date:"3/10/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7437490027753930752",r:16,c:0,rp:6,imp:0,vv:459,video:true,brayden:false,hook:"Retail media is competing directly with POS for budget",content:"Clean store policies are reshaping what makes it onto the floor. Yet category leaders are still investing in physical retail execution. That's not nostalgia. That's proof."},
+  {date:"3/10/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7437202524203315200",r:25,c:1,rp:7,imp:0,vv:0,video:false,brayden:false,hook:"Faster Display — speed to shelf innovation",content:"In retail, speed matters. Faster a product gets to shelf, faster it starts selling. These displays set up in seconds, moving products from shipment to shelf with very little effort."},
+  {date:"3/9/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7436877352783003648",r:25,c:1,rp:7,imp:0,vv:694,video:true,brayden:false,hook:"Faster Display demo video",content:"Video showing the Faster Display setup process — from box to floor-ready in seconds. Speed to shelf innovation for retail."},
+  {date:"3/3/2026",m:3,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7434606009832124416",r:12,c:0,rp:2,imp:589,vv:0,video:false,brayden:false,hook:"The cost of a bad display isn't the display — it's the lost velocity",content:"When a display fails structurally, gets set up wrong, or never makes it to the floor, the brand loses weeks of selling opportunity."},
+  {date:"2/26/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7432154297938894848",r:9,c:0,rp:1,imp:675,vv:0,video:false,brayden:false,hook:"The evolving role of point of sale in a digital-first world",content:"POS isn't dying — it's being forced to prove its ROI in ways it never had to before. That's raising the bar for execution quality."},
+  {date:"2/24/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7432072935701463041",r:11,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"What makes a display 'premium'? It's not the finish — it's the intent",content:"Premium isn't a material choice. It's a design decision that starts with understanding how the consumer will encounter the product."},
+  {date:"2/19/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7429912722906968065",r:7,c:0,rp:2,imp:0,vv:366,video:true,brayden:false,hook:"Retail execution compliance: the gap between plan and floor",content:"Compliance isn't about checking boxes. It's about ensuring every dollar spent on in-store marketing actually shows up the way it was designed."},
+  {date:"2/17/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7429202259525152768",r:14,c:0,rp:3,imp:640,vv:0,video:false,brayden:false,hook:"Print production matters more than you think",content:"The difference between a display that looks premium and one that looks cheap often comes down to print quality. Colour matching, substrate choice, coating."},
+  {date:"2/12/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7430619764730834945",r:8,c:0,rp:0,imp:0,vv:0,video:false,brayden:false,hook:"Seasonal programs need a 16-week runway",content:"If you're planning a summer display program and haven't started design yet, you're already behind. Sixteen weeks is the minimum for design, approval, production, and distribution."},
+  {date:"2/10/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7427358298473062402",r:10,c:0,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"Coupons and on-shelf promotions are evolving, not disappearing",content:"The most effective programs leverage coupons and discounts to signal intentional value rather than desperation."},
+  {date:"2/6/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7426995871566966784",r:17,c:0,rp:5,imp:0,vv:352,video:true,brayden:false,hook:"Deep Bay Vodka Soda display",content:"Translating retail insights into action. Sugarless RTD category is growing and this display was designed to capitalize on that trend at shelf."},
+  {date:"2/4/2026",m:2,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7425610520319254529",r:12,c:0,rp:2,imp:0,vv:405,video:true,brayden:false,hook:"Retail display trends to watch in 2026",content:"What's changing in the retail display space this year — sustainability, modular formats, speed to shelf, and digital integration."},
+  {date:"1/29/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7424822097727684609",r:13,c:0,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"The shelf is the final mile of your marketing strategy",content:"Everything a brand invests in — advertising, social, influencers — leads to a moment at shelf. That moment needs to be engineered, not left to chance."},
+  {date:"1/27/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7421922443524542466",r:10,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"Display ROI isn't about impressions — it's about velocity",content:"The metric that matters for in-store displays isn't how many people saw it, it's how many more units moved because of it."},
+  {date:"1/22/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7420110539931967488",r:15,c:0,rp:3,imp:0,vv:280,video:true,brayden:false,hook:"Diageo display production walkthrough",content:"Behind the scenes of a Diageo retail display production — from design file to finished product coming off the line."},
+  {date:"1/20/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7419755659895930880",r:8,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"Planning OND 2026 starts now",content:"If you're a beverage brand that wants to win the Ontario/November/December selling season, the planning window is January through March."},
+  {date:"1/15/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7419408418073014272",r:12,c:1,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"Category management and display strategy go hand in hand",content:"The brands winning shelf space understand that displays aren't just promotional — they're part of a category management conversation."},
+  {date:"1/13/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7417574053907124224",r:11,c:0,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"Walmart's clean store policy is changing display strategy",content:"Walmart's clean store initiative means fewer, better displays. Brands that understand the new rules are designing specifically for compliance."},
+  {date:"1/8/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7416849235436003328",r:14,c:0,rp:3,imp:0,vv:0,video:false,brayden:false,hook:"Alcohol brand displays in 2026 — what's changing",content:"Regulatory shifts, clean store policies, and premiumization are reshaping how alc/bev brands show up in store. The old playbook isn't working."},
+  {date:"1/6/2026",m:1,y:2026,url:"https://www.linkedin.com/feed/update/urn:li:activity:7414674724867399680",r:9,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"MSG 2025 year in review",content:"A look back at the projects, partnerships, and retail programs that defined Main St. Group's 2025."},
+  {date:"12/17/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7407471310144032768",r:18,c:0,rp:3,imp:0,vv:0,video:false,brayden:false,hook:"Hennessy holiday display",content:"Hennessy holiday retail display. Premium materials, clean design, strong brand presence during the most competitive selling window of the year."},
+  {date:"12/15/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7409238942698332160",r:15,c:1,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"Holiday POS execution: what separates the winners",content:"The brands that win the holiday shelf have three things: early commitment, clean design that fits the store environment, and logistics locked 8 weeks out."},
+  {date:"12/10/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7404900382520315904",r:12,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"Retail display sustainability isn't optional anymore",content:"Retailers are asking tougher questions about materials and recyclability. Brands that can't answer them are losing floor placements."},
+  {date:"12/8/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7402383707397087233",r:9,c:0,rp:2,imp:0,vv:0,video:false,brayden:false,hook:"Behind the scenes: packaging a 10,000-unit display run",content:"What it takes to produce, pack, and ship 10,000 retail displays on time. Logistics, quality control, and warehouse operations."},
+  {date:"12/3/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7401998689399197696",r:13,c:0,rp:3,imp:0,vv:340,video:true,brayden:false,hook:"OND recap — lessons from the selling season",content:"What we learned running OND retail display programs this year. What worked, what didn't, and what we're changing for 2026."},
+  {date:"12/2/2025",m:12,y:2025,url:"https://www.linkedin.com/feed/update/urn:li:activity:7401670120223531008",r:10,c:0,rp:1,imp:0,vv:0,video:false,brayden:false,hook:"The last mile of retail marketing is physical",content:"Digital drives awareness. Physical drives conversion. The brands investing in both are winning."}
+];
+
+// Email campaigns stored in localStorage
+function getEmails() {
+  try { return JSON.parse(localStorage.getItem('msg_emails') || '[]'); } catch(e) { return []; }
+}
+function saveEmails(emails) {
+  localStorage.setItem('msg_emails', JSON.stringify(emails));
+}
+
+// ==================== TAB NAVIGATION ====================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ==================== OVERVIEW TAB ====================
+function renderOverview() {
+  const originals = linkedinPosts.filter(p => !p.brayden);
+  const totalReactions = originals.reduce((s,p) => s + p.r, 0);
+  const totalComments = originals.reduce((s,p) => s + p.c, 0);
+  const totalReposts = originals.reduce((s,p) => s + p.rp, 0);
+  const avgReactions = Math.round(totalReactions / originals.length);
+  const videoPosts = originals.filter(p => p.video);
+  const staticPosts = originals.filter(p => !p.video);
+  const videoAvg = Math.round(videoPosts.reduce((s,p) => s + p.r, 0) / videoPosts.length);
+  const staticAvg = Math.round(staticPosts.reduce((s,p) => s + p.r, 0) / staticPosts.length);
+
+  document.getElementById('overview-summary').innerHTML = `
+    <div class="summary-card"><div class="summary-label">Original posts</div><div class="summary-val">${originals.length}</div></div>
+    <div class="summary-card"><div class="summary-label">Avg reactions</div><div class="summary-val">${avgReactions}</div></div>
+    <div class="summary-card"><div class="summary-label">Total comments</div><div class="summary-val">${totalComments}</div><div class="summary-change change-down">Biggest gap to close</div></div>
+    <div class="summary-card"><div class="summary-label">Total reposts</div><div class="summary-val">${totalReposts}</div></div>
+    <div class="summary-card"><div class="summary-label">Video avg</div><div class="summary-val">${videoAvg}</div><div class="summary-change change-up">vs ${staticAvg} static</div></div>
+  `;
+
+  // Monthly reactions chart
+  const months = ['12-2025','1-2026','2-2026','3-2026','4-2026','5-2026'];
+  const monthLabels = ['Dec','Jan','Feb','Mar','Apr','May'];
+  const monthData = months.map(key => {
+    const [m,y] = key.split('-').map(Number);
+    const posts = originals.filter(p => p.m === m && p.y === y);
+    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
+  });
+  const monthCounts = months.map(key => {
+    const [m,y] = key.split('-').map(Number);
+    return originals.filter(p => p.m === m && p.y === y).length;
+  });
+
+  new Chart(document.getElementById('monthlyReactions'), {
+    type: 'bar',
+    data: {
+      labels: monthLabels.map((l,i) => l + ' (' + monthCounts[i] + ')'),
+      datasets: [{
+        data: monthData,
+        backgroundColor: monthData.map((v,i) => i === monthData.length-1 ? '#B5D4F4' : '#378ADD'),
+        borderRadius: 4, barThickness: 36
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' avg reactions' } } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
+    }
+  });
+
+  // Content type chart
+  const types = [
+    { label: 'Named brand + video', filter: p => p.video && /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli/i.test(p.hook) },
+    { label: 'Named brand + static', filter: p => !p.video && /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy Boyd|Casamigos|19 Crimes|Faster/i.test(p.hook) },
+    { label: 'Team spotlight', filter: p => /join|Yasi|Russ|Elizabeth|designer spotlight|behind the scenes.*studio/i.test(p.hook) },
+    { label: 'Educational', filter: p => !p.video && !/join|Yasi|Russ|Elizabeth|Kendall|1800|Peroni|Stoli|Bulleit|Forty Creek|Appleton|Jimmy|Casamigos|19 Crimes|Faster|Deep Bay|Diageo|Hennessy/i.test(p.hook) }
+  ];
+  const typeData = types.map(t => {
+    const posts = originals.filter(t.filter);
+    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r + p.c + p.rp, 0) / posts.length) : 0;
+  });
+
+  new Chart(document.getElementById('typeChart'), {
+    type: 'bar',
+    data: {
+      labels: types.map(t => t.label),
+      datasets: [{ data: typeData, backgroundColor: ['#378ADD','#85B7EB','#EF9F27','#B4B2A9'], borderRadius: 4, barThickness: 28 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, grid: { color: '#f0ede6' } }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } }
+    }
+  });
+
+  // Comments trend
+  const commentData = months.map(key => {
+    const [m,y] = key.split('-').map(Number);
+    return originals.filter(p => p.m === m && p.y === y).reduce((s,p) => s + p.c, 0);
+  });
+  new Chart(document.getElementById('commentsChart'), {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [{ data: commentData, borderColor: '#E24B4A', backgroundColor: 'rgba(226,75,74,0.1)', fill: true, tension: 0.3, pointRadius: 5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
+    }
+  });
+
+  // Video vs static
+  const videoData = months.map(key => {
+    const [m,y] = key.split('-').map(Number);
+    const posts = originals.filter(p => p.m === m && p.y === y && p.video);
+    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
+  });
+  const staticData = months.map(key => {
+    const [m,y] = key.split('-').map(Number);
+    const posts = originals.filter(p => p.m === m && p.y === y && !p.video);
+    return posts.length ? Math.round(posts.reduce((s,p) => s + p.r, 0) / posts.length) : 0;
+  });
+  new Chart(document.getElementById('videoChart'), {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { label: 'Video', data: videoData, borderColor: '#639922', backgroundColor: 'rgba(99,153,34,0.1)', fill: true, tension: 0.3, pointRadius: 5 },
+        { label: 'Static', data: staticData, borderColor: '#378ADD', backgroundColor: 'rgba(55,138,221,0.1)', fill: true, tension: 0.3, pointRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f0ede6' } }, x: { grid: { display: false } } }
+    }
+  });
+}
+
+// ==================== LINKEDIN TAB ====================
+function renderLinkedIn() {
+  const monthF = document.getElementById('monthFilter').value;
+  const typeF = document.getElementById('typeFilter').value;
+  const sortF = document.getElementById('sortFilter').value;
+
+  let posts = [...linkedinPosts];
+
+  if (monthF !== 'all') {
+    const [fm, fy] = monthF.split('-').map(Number);
+    posts = posts.filter(p => p.m === fm && p.y === fy);
+  }
+  if (typeF === 'original') posts = posts.filter(p => !p.brayden);
+  else if (typeF === 'video') posts = posts.filter(p => p.video && !p.brayden);
+  else if (typeF === 'static') posts = posts.filter(p => !p.video && !p.brayden);
+  else if (typeF === 'repost') posts = posts.filter(p => p.brayden);
+
+  if (sortF === 'reactions') posts.sort((a,b) => b.r - a.r);
+  else if (sortF === 'comments') posts.sort((a,b) => b.c - a.c);
+  else if (sortF === 'reposts') posts.sort((a,b) => b.rp - a.rp);
+  else if (sortF === 'views') posts.sort((a,b) => ((b.imp||0)+(b.vv||0)) - ((a.imp||0)+(a.vv||0)));
+  else if (sortF === 'total') posts.sort((a,b) => (b.r+b.c+b.rp) - (a.r+a.c+a.rp));
+
+  const originals = posts.filter(p => !p.brayden);
+  const avgR = originals.length ? Math.round(originals.reduce((s,p) => s + p.r, 0) / originals.length) : 0;
+  const avgC = originals.length ? (originals.reduce((s,p) => s + p.c, 0) / originals.length).toFixed(1) : '0';
+
+  document.getElementById('linkedin-summary').innerHTML = `
+    <div class="summary-card"><div class="summary-label">Showing</div><div class="summary-val">${posts.length}</div></div>
+    <div class="summary-card"><div class="summary-label">Avg reactions</div><div class="summary-val">${avgR}</div></div>
+    <div class="summary-card"><div class="summary-label">Avg comments</div><div class="summary-val">${avgC}</div></div>
+  `;
+
+  const html = posts.map(p => {
+    const type = p.brayden ? 'repost' : (p.video ? 'video' : 'static');
+    const typeLabel = p.brayden ? 'Repost' : (p.video ? 'Video' : 'Static');
+    const total = p.r + p.c + p.rp;
+    return `<div class="post-card">
+      <div>
+        <div class="post-date">${p.date}</div>
+        <span class="post-type type-${type}">${typeLabel}</span>
+      </div>
+      <div class="post-content">
+        <div class="post-hook">${p.hook}</div>
+        <div>${p.content.substring(0, 180)}${p.content.length > 180 ? '...' : ''}</div>
+        <a href="${p.url}" target="_blank" rel="noopener">View on LinkedIn &#8599;</a>
+      </div>
+      <div class="post-stats">
+        <div><div class="stat-num">${p.r}</div>reactions</div>
+        <div><div class="stat-num">${p.c}</div>comments</div>
+        <div><div class="stat-num">${p.rp}</div>reposts</div>
+        <div><div class="stat-num">${p.video ? (p.vv ? p.vv.toLocaleString() : '—') : (p.imp ? p.imp.toLocaleString() : '—')}</div>${p.video ? 'video views' : 'impressions'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('postList').innerHTML = html;
+}
+
+['monthFilter','typeFilter','sortFilter'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderLinkedIn);
+});
+
+// ==================== EMAIL TAB ====================
+function addEmail() {
+  const email = {
+    id: Date.now(),
+    name: document.getElementById('emailName').value,
+    date: document.getElementById('emailDate').value,
+    type: document.getElementById('emailType').value,
+    recipients: parseInt(document.getElementById('emailRecipients').value) || 0,
+    opens: parseInt(document.getElementById('emailOpens').value) || 0,
+    clicks: parseInt(document.getElementById('emailClicks').value) || 0,
+    unsubs: parseInt(document.getElementById('emailUnsubs').value) || 0,
+    replies: parseInt(document.getElementById('emailReplies').value) || 0,
+    bounces: parseInt(document.getElementById('emailBounces').value) || 0,
+    subject: document.getElementById('emailSubject').value,
+    notes: document.getElementById('emailNotes').value
+  };
+  if (!email.name) { alert('Please enter a campaign name'); return; }
+  const emails = getEmails();
+  emails.push(email);
+  saveEmails(emails);
+  renderEmails();
+  // Clear form
+  ['emailName','emailDate','emailRecipients','emailOpens','emailClicks','emailUnsubs','emailReplies','emailBounces','emailSubject','emailNotes'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteEmail(id) {
+  const emails = getEmails().filter(e => e.id !== id);
+  saveEmails(emails);
+  renderEmails();
+}
+
+function renderEmails() {
+  const emails = getEmails();
+
+  if (emails.length) {
+    const totalSent = emails.reduce((s,e) => s + e.recipients, 0);
+    const totalOpens = emails.reduce((s,e) => s + e.opens, 0);
+    const totalClicks = emails.reduce((s,e) => s + e.clicks, 0);
+    const avgOpenRate = totalSent ? Math.round(totalOpens / totalSent * 100) : 0;
+    const avgClickRate = totalOpens ? Math.round(totalClicks / totalOpens * 100) : 0;
+
+    document.getElementById('email-summary').innerHTML = `
+      <div class="summary-card"><div class="summary-label">Campaigns</div><div class="summary-val">${emails.length}</div></div>
+      <div class="summary-card"><div class="summary-label">Total sent</div><div class="summary-val">${totalSent.toLocaleString()}</div></div>
+      <div class="summary-card"><div class="summary-label">Avg open rate</div><div class="summary-val">${avgOpenRate}%</div></div>
+      <div class="summary-card"><div class="summary-label">Avg CTR</div><div class="summary-val">${avgClickRate}%</div></div>
+    `;
+  } else {
+    document.getElementById('email-summary').innerHTML = '<div class="summary-card" style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px">No email campaigns logged yet. Add your first one above.</div>';
+  }
+
+  const gridEl = document.getElementById('emailGrid');
+  gridEl.innerHTML = '';
+  if (emails.length) {
+    new gridjs.Grid({
+      columns: [
+        { name: 'Date', width: '90px' },
+        { name: 'Campaign', width: '150px' },
+        { name: 'Subject', width: '180px' },
+        { name: 'Sent', width: '70px' },
+        { name: 'Opens', width: '70px' },
+        { name: 'Open %', width: '70px' },
+        { name: 'Clicks', width: '70px' },
+        { name: 'CTR', width: '60px' },
+        { name: 'Replies', width: '70px' },
+        { name: '', width: '50px', formatter: (cell) => gridjs.html(`<button class="btn btn-danger" style="padding:2px 8px;font-size:11px" onclick="deleteEmail(${cell})">x</button>`) }
+      ],
+      data: emails.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => [
+        e.date || '-',
+        e.name,
+        e.subject || '-',
+        e.recipients,
+        e.opens,
+        e.recipients ? Math.round(e.opens/e.recipients*100) + '%' : '-',
+        e.clicks,
+        e.opens ? Math.round(e.clicks/e.opens*100) + '%' : '-',
+        e.replies,
+        e.id
+      ]),
+      sort: true,
+      style: { table: { 'font-size': '13px' } }
+    }).render(gridEl);
+  }
+}
+
+function exportEmails() {
+  const emails = getEmails();
+  if (!emails.length) { alert('No emails to export'); return; }
+  const headers = ['Date','Campaign','Type','Subject','Recipients','Opens','Open Rate','Clicks','CTR','Replies','Unsubscribes','Bounces','Notes'];
+  const rows = emails.map(e => [
+    e.date, e.name, e.type, e.subject, e.recipients, e.opens,
+    e.recipients ? Math.round(e.opens/e.recipients*100)+'%' : '', e.clicks,
+    e.opens ? Math.round(e.clicks/e.opens*100)+'%' : '', e.replies, e.unsubs, e.bounces, e.notes
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'msg-email-campaigns.csv';
+  a.click();
+}
+
+// ==================== STRATEGY TAB ====================
+function renderStrategy() {
+  const originals = linkedinPosts.filter(p => !p.brayden);
+  const totalComments = originals.reduce((s,p) => s + p.c, 0);
+  const brandPosts = originals.filter(p => /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy Boyd|Casamigos|19 Crimes/i.test(p.hook));
+  const brandAvg = Math.round(brandPosts.reduce((s,p) => s + p.r, 0) / brandPosts.length);
+  const genericPosts = originals.filter(p => !brandPosts.includes(p) && !/join|Yasi|Russ|Elizabeth|Faster/i.test(p.hook));
+  const genericAvg = genericPosts.length ? Math.round(genericPosts.reduce((s,p) => s + p.r, 0) / genericPosts.length) : 0;
+
+  document.getElementById('strategyContent').innerHTML = `
+    <div class="rec-card">
+      <span class="rec-tag rec-critical">Critical</span>
+      <h4>Fix the comment drought</h4>
+      <p>Only ${totalComments} total comments across ${originals.length} original posts in 6 months. The content generates passive consumption (likes, reposts) but zero conversation. Posts read as showcases ("look what we made") rather than opinions ("here's what we think"). Every post in June should include either a declarative position someone could disagree with, or a specific question tied to the industry insight in the post. Not generic CTAs — real provocation. Example: instead of "Great work on this display" try "Most brands over-invest in shelf talkers and under-invest in floor displays. Here's why that math doesn't work."</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-critical">Critical</span>
+      <h4>Name a brand in every post</h4>
+      <p>Named brand posts average ${brandAvg} reactions vs ${genericAvg} for generic educational content — that's a ${Math.round((brandAvg-genericAvg)/genericAvg*100)}% gap. When you name Kendall-Jackson, 1800 Tequila, or Peroni, three audiences engage: brand employees, their agency partners, and prospects thinking "they work with brands I recognize." The KJ x NBA post (39 reactions, 6 comments) outperformed everything else by a wide margin. Generic "tips for better POS" posts never crack the top 10.</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-high">High</span>
+      <h4>Prioritize video — it's earning 2x the reposts</h4>
+      <p>Video posts average 4.8 reposts vs 2.3 for static. The KJ video hit 805 views and 7 reposts. Video content gets shared because it feels like content, not a corporate post. The static + video pair strategy (posting the same project as both a static image post and a video walkthrough a day or two apart) is smart — double the feed impressions from one project.</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-high">High</span>
+      <h4>Cut volume from 12-15 posts/month to 8-10</h4>
+      <p>April had 15 posts but only averaged 21.6 reactions because the extra posts were filler. Fewer, sharper posts. Each one needs a named brand, a real number, or a provocation. If it doesn't have one of those three ingredients, don't post it. Quality-driven volume will raise the average and train the algorithm to show your content to more people.</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-medium">Medium</span>
+      <h4>Team spotlights work — but tie them to projects</h4>
+      <p>Yasi's designer spotlight (34 reactions) and Elizabeth Rivers' hire announcement (26 reactions) both performed well. But the best team posts are the ones that also reference a project: Russ shooting Bulleit Bourbon, Yasi's display work. The standalone hire announcement got reactions but zero reposts and zero comments. People-plus-project is the formula.</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-medium">Medium</span>
+      <h4>Open with a specific number or stat</h4>
+      <p>"Two minutes. That's how long it takes to go from box to floor-ready." — the Peroni post opened with a number and immediately outperformed generic hooks. "4+ years... 10+ years of experience" in the Yasi spotlight. Numbers stop the scroll because they're concrete in a feed full of vague claims. At least 3 of every 8 posts should lead with a specific metric.</p>
+    </div>
+    <div class="rec-card">
+      <span class="rec-tag rec-medium">Medium</span>
+      <h4>Reposts of Brayden/Troy still spike the numbers — keep sharing but don't depend on it</h4>
+      <p>Brayden Mooney reposts average 30+ reactions vs 16 for originals. They inflate the monthly average and create the "big swing" perception. Keep sharing them, but the company page strategy should be measured on original content performance only. If originals can't stand on their own, the page has a content problem, not a distribution problem.</p>
+    </div>
+    <div class="rec-card" style="background:#f8f7f4;border-style:dashed">
+      <h4>June content formula (based on top 10 analysis)</h4>
+      <p>Every post follows this checklist:<br><br>
+      1. Names a specific brand, retailer, or project<br>
+      2. Opens with a number, stat, or declarative statement<br>
+      3. Shows finished work (not concepts or announcements)<br>
+      4. Ends with a strong declarative line (no engagement questions)<br>
+      5. At least 40% of posts include video<br>
+      6. At least 2 posts per month take a contrarian or opinion-driven position<br>
+      7. Team spotlights always pair a person with a specific project<br>
+      8. Total monthly volume: 8-10 posts maximum</p>
+    </div>
+  `;
+}
+
+// ==================== INIT ====================
+renderOverview();
+renderLinkedIn();
+renderEmails();
+renderStrategy();
+</script>
+</body>
+</html>
