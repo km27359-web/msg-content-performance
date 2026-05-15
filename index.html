@@ -702,16 +702,16 @@ function renderEmails() {
   gridEl.innerHTML = '';
   new gridjs.Grid({
     columns: [
-      { name: 'Date', width: '95px', sort: true },
-      { name: 'Campaign', width: '240px' },
-      { name: 'Type', width: '110px' },
-      { name: 'Sent', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'Opens', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'Open %', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'Clicks', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'CTOR', width: '70px', attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'Bounces', width: '75px', attributes: (cell) => ({style:'text-align:right'}) },
-      { name: 'Status', width: '90px' }
+      { name: 'Date', width: '110px', sort: true },
+      { name: 'Campaign', width: '280px' },
+      { name: 'Type', width: '130px' },
+      { name: 'Sent', width: '90px', sort: true, attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'Opens', width: '90px', sort: true, attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'Open %', width: '90px', sort: true, attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'Clicks', width: '90px', sort: true, attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'CTOR', width: '85px', attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'Bounces', width: '90px', attributes: (cell) => ({style:'text-align:right;padding-right:14px'}) },
+      { name: 'Status', width: '100px' }
     ],
     data: emails.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => {
       const del = e.delivered || (e.recipients - (e.bounces||0));
@@ -729,7 +729,7 @@ function renderEmails() {
     ]}),
     sort: true,
     pagination: { limit: 20 },
-    style: { table: { 'font-size': '13px' } }
+    style: { table: { 'font-size': '13px' }, td: { 'padding': '10px 12px' }, th: { 'padding': '10px 12px' } }
   }).render(gridEl);
 }
 
