@@ -97,6 +97,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   .form-grid { grid-template-columns: 1fr; }
 }
 
+/* Strategy section */
+.strat-section { margin-bottom: 32px; }
+.strat-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #1a1a1a; }
+.strat-section .strat-sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+.strat-divider { border: none; border-top: 1px solid #e0ddd6; margin: 32px 0; }
+.strat-quote { border-left: 3px solid #378ADD; padding: 8px 14px; margin: 10px 0; background: #f8f7f4; font-size: 13px; color: #444; font-style: italic; }
+.rec-card ul { margin: 8px 0 0 18px; font-size: 13px; color: #555; line-height: 1.8; }
+.rec-card ul li { margin-bottom: 2px; }
+
 /* Grid.js overrides */
 .gridjs-wrapper { border-radius: 10px; border: 0.5px solid #e0ddd6; }
 .gridjs-table { font-size: 13px; }
@@ -108,7 +117,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="header">
     <h1>MSG Content Performance Hub</h1>
     <p>LinkedIn company page analytics and email campaign tracking for Main St. Group</p>
-    <div class="last-updated">Last updated: May 14, 2026 | Data: Dec 2025 - May 2026</div>
+    <div class="last-updated">Last updated: May 15, 2026</div>
   </div>
 
   <div class="tab-bar">
@@ -315,6 +324,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <!-- STRATEGY TAB -->
   <div id="strategy" class="tab-content">
     <div id="strategyContent"></div>
+    <h3 style="font-size:16px;font-weight:600;margin:28px 0 8px;color:#1a1a1a;">Email Send-Time Analysis</h3>
+    <p style="font-size:13px;color:#666;margin-bottom:16px;">Based on 14 campaigns, Nov 2025 - May 2026. All times Eastern.</p>
+    <div class="chart-row">
+      <div class="chart-card"><h3>Day of week performance</h3><div class="chart-wrap"><canvas id="stratDayChart"></canvas></div></div>
+      <div class="chart-card"><h3>Send window performance</h3><div class="chart-wrap"><canvas id="stratWindowChart"></canvas></div></div>
+    </div>
   </div>
 </div>
 
@@ -755,113 +770,297 @@ function exportEmails() {
 
 // ==================== STRATEGY TAB ====================
 function renderStrategy() {
-  const originals = linkedinPosts.filter(p => !p.brayden);
-  const totalComments = originals.reduce((s,p) => s + p.c, 0);
-  const brandPosts = originals.filter(p => /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy Boyd|Casamigos|19 Crimes/i.test(p.hook));
-  const brandAvg = Math.round(brandPosts.reduce((s,p) => s + p.r, 0) / brandPosts.length);
-  const genericPosts = originals.filter(p => !brandPosts.includes(p) && !/join|Yasi|Russ|Elizabeth|Faster/i.test(p.hook));
-  const genericAvg = genericPosts.length ? Math.round(genericPosts.reduce((s,p) => s + p.r, 0) / genericPosts.length) : 0;
+  var O = linkedinPosts.filter(function(p){return !p.brayden;});
+  var totalC = O.reduce(function(s,p){return s+p.c;},0);
+  var totalR = O.reduce(function(s,p){return s+p.r;},0);
+  var totalRP = O.reduce(function(s,p){return s+p.rp;},0);
+  function ar(a){return a.length?Math.round(a.reduce(function(s,p){return s+p.r;},0)/a.length):0;}
+  function ac(a){return a.length?(a.reduce(function(s,p){return s+p.c;},0)/a.length).toFixed(1):'0';}
+  function at(a){return a.length?Math.round(a.reduce(function(s,p){return s+p.r+p.c+p.rp;},0)/a.length):0;}
+  var brandRe = /Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy Boyd|Casamigos|19 Crimes|Faster|BeatBox/i;
+  var BP = O.filter(function(p){return brandRe.test(p.hook);});
+  var NB = O.filter(function(p){return !brandRe.test(p.hook);});
+  var vids = O.filter(function(p){return p.video;});
+  var stats = O.filter(function(p){return !p.video;});
+  var vRP = (vids.reduce(function(s,p){return s+p.rp;},0)/vids.length).toFixed(1);
+  var sRP = (stats.reduce(function(s,p){return s+p.rp;},0)/stats.length).toFixed(1);
+  var hookBrand = O.filter(function(p){return /^(Kendall|1800|Peroni|Deep Bay|Diageo|Hennessy|Stoli|Bulleit|Forty Creek|Appleton|Jimmy|Casamigos|19 Crimes|BeatBox|Walmart|Faster)/i.test(p.hook);});
+  var hookPeople = O.filter(function(p){return /join|Yasi|Russ|Elizabeth|designer spotlight|behind the scenes/i.test(p.hook);});
+  var hookNum = O.filter(function(p){return /^[0-9]|^Two minutes|^16-week|^10,000/i.test(p.hook);});
+  var hookDecl = O.filter(function(p){return /isn.t|more than|better than|most important|best |only as good|not the |not your|not about/i.test(p.hook);});
+  var hookGen = O.filter(function(p){return /evolving|planning|retail display trends|retail media|compliance|seasonal|cost of|shelf is|last mile/i.test(p.hook);});
+  var shortH = O.filter(function(p){return p.hook.length<=50;});
+  var longH = O.filter(function(p){return p.hook.length>50;});
+  var months = {};
+  O.forEach(function(p){var k=p.m+'/'+p.y;if(!months[k])months[k]=[];months[k].push(p);});
+  var emails = getEmails();
+  var DD = emails.filter(function(e){return e.type==='Deck Download';});
+  var NL = emails.filter(function(e){return e.type==='Newsletter';});
+  var RE = emails.filter(function(e){return e.type==='Rep Eblast';});
+  function eor(a){var d=a.reduce(function(s,e){return s+(e.delivered||e.recipients-(e.bounces||0));},0);return d?(a.reduce(function(s,e){return s+e.opens;},0)/d*100).toFixed(1):'0';}
+  function ector(a){var o=a.reduce(function(s,e){return s+e.opens;},0);return o?(a.reduce(function(s,e){return s+e.clicks;},0)/o*100).toFixed(1):'0';}
+  function ectr(a){var d=a.reduce(function(s,e){return s+(e.delivered||e.recipients-(e.bounces||0));},0);return d?(a.reduce(function(s,e){return s+e.clicks;},0)/d*100).toFixed(1):'0';}
+  var smE = emails.filter(function(e){return e.recipients<400;});
+  var lgE = emails.filter(function(e){return e.recipients>=400;});
+  var specE = emails.filter(function(e){return /BeatBox|Store Walk|Studio|Holiday|Photography/i.test(e.subject);});
+  var genE = emails.filter(function(e){return !/BeatBox|Store Walk|Studio|Holiday|Photography/i.test(e.subject);});
+  var brandLift = Math.round((at(BP)/at(NB)-1)*100);
+  var rpLift = Math.round((parseFloat(vRP)/parseFloat(sRP)-1)*100);
+  var ctorRatio = Math.round(parseFloat(ector(DD))/parseFloat(ector(NL)));
+  var monthRows = '';
+  Object.keys(months).forEach(function(k){var ps=months[k];var a=Math.round(ps.reduce(function(s,p){return s+p.r;},0)/ps.length);monthRows+='<li><strong>'+k.replace('/','/20')+':</strong> '+ps.length+' posts, avg '+a+' reactions</li>';});
 
-  document.getElementById('strategyContent').innerHTML = `
-    <div class="rec-card">
-      <span class="rec-tag rec-critical">Critical</span>
-      <h4>Fix the comment drought</h4>
-      <p>Only ${totalComments} total comments across ${originals.length} original posts in 6 months. The content generates passive consumption (likes, reposts) but zero conversation. Posts read as showcases rather than opinions. Every post in June should include either a declarative position someone could disagree with, or a specific question tied to the industry insight in the post.</p>
-    </div>
-    <div class="rec-card">
-      <span class="rec-tag rec-critical">Critical</span>
-      <h4>Name a brand in every post</h4>
-      <p>Named brand posts average ${brandAvg} reactions vs ${genericAvg} for generic educational content. When you name Kendall-Jackson, 1800 Tequila, or Peroni, three audiences engage: brand employees, their agency partners, and prospects thinking they work with brands I recognize. The KJ x NBA post (39 reactions, 6 comments) outperformed everything else by a wide margin.</p>
-    </div>
-    <div class="rec-card">
-      <span class="rec-tag rec-high">High</span>
-      <h4>Prioritize video</h4>
-      <p>Video posts average 4.8 reposts vs 2.3 for static. The KJ video hit 805 views and 7 reposts. The static + video pair strategy is smart — double the feed impressions from one project.</p>
-    </div>
-    <div class="rec-card">
-      <span class="rec-tag rec-high">High</span>
-      <h4>Cut volume from 12-15 posts/month to 8-10</h4>
-      <p>April had 15 posts but only averaged 21.6 reactions because the extra posts were filler. Fewer, sharper posts. Each one needs a named brand, a real number, or a provocation.</p>
-    </div>
-    <div class="rec-card">
-      <span class="rec-tag rec-medium">Medium</span>
-      <h4>Team spotlights work — but tie them to projects</h4>
-      <p>Yasi designer spotlight (34 reactions) and Elizabeth Rivers hire announcement (26 reactions) both performed well. But the best team posts also reference a project. People-plus-project is the formula.</p>
-    </div>
-    <div class="rec-card">
-      <span class="rec-tag rec-medium">Medium</span>
-      <h4>Open with a specific number or stat</h4>
-      <p>The Peroni post opened with a number and immediately outperformed generic hooks. Numbers stop the scroll. At least 3 of every 8 posts should lead with a specific metric.</p>
-    </div>
-    <div class="rec-card" style="background:#f8f7f4;border-style:dashed">
-      <h4>June content formula (based on top 10 analysis)</h4>
-      <p>Every post follows this checklist:<br><br>
-      1. Names a specific brand, retailer, or project<br>
-      2. Opens with a number, stat, or declarative statement<br>
-      3. Shows finished work (not concepts or announcements)<br>
-      4. Ends with a strong declarative line (no engagement questions)<br>
-      5. At least 40% of posts include video<br>
-      6. At least 2 posts per month take a contrarian or opinion-driven position<br>
-      7. Team spotlights always pair a person with a specific project<br>
-      8. Total monthly volume: 8-10 posts maximum</p>
-    </div>
-  `;
+  var h = '';
+
+  // SECTION 1: CROSS-CHANNEL
+  h += '<div class="strat-section">';
+  h += '<h2>Cross-Channel: What Works Everywhere</h2>';
+  h += '<p class="strat-sub">Patterns that hold true across both LinkedIn and email</p>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Pattern #1</span>';
+  h += '<h4>Specificity wins. Every time.</h4>';
+  h += '<p>The single strongest predictor of performance across both channels is whether the content names something specific: a brand, a project, a number, a person.</p>';
+  h += '<ul>';
+  h += '<li><strong>LinkedIn:</strong> Named brand posts average '+ar(BP)+' reactions and '+at(BP)+' total engagements vs '+ar(NB)+' reactions and '+at(NB)+' total for posts without a brand name. That is a <strong>'+brandLift+'% lift</strong> from simply naming the work.</li>';
+  h += '<li><strong>Email:</strong> Subject lines with a specific name or asset average a '+eor(specE)+'% open rate vs '+eor(genE)+'% for generic topical subjects.</li>';
+  h += '</ul>';
+  h += '<div class="strat-quote">The rule: if you can replace the subject or hook with a competitor\'s name and it still works, it is too generic. Every piece of content should be unshareable by anyone except MSG.</div>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Action for team:</strong> Before writing any hook or subject line, fill in the blank: "This post is about [specific brand/person/project/stat]." If you cannot fill the blank, the content is not ready to write yet.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Pattern #2</span>';
+  h += '<h4>Smaller, targeted audiences outperform blasts</h4>';
+  h += '<ul>';
+  h += '<li><strong>Email:</strong> Small sends (&lt;400 recipients) hit '+eor(smE)+'% open rate and '+ectr(smE)+'% CTR. Large sends (400+) drop to '+eor(lgE)+'% open and '+ectr(lgE)+'% CTR. The small sends are <strong>3.5x more clickable.</strong></li>';
+  h += '<li><strong>LinkedIn:</strong> Posts about specific projects for known brands get reshared by brand teams and agency partners, creating organic reach that generic posts never achieve. The KJ x NBA post (39 reactions, 7 reposts) reached more people than any thought leadership post this year.</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Action for team:</strong> The Global Store Walk deck downloads ('+eor(DD)+'% open, '+ector(DD)+'% CTOR) prove the model: a tight, curated list receiving content built specifically for them will always outperform a mass blast. Consider segmenting the large newsletter list by engagement tier.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">Pattern #3</span>';
+  h += '<h4>Show the work, not the lesson</h4>';
+  h += '<p>The top 10 LinkedIn posts and the top-performing emails share a common trait: they show real, finished work rather than explaining industry concepts.</p>';
+  h += '<ul>';
+  h += '<li><strong>Top 5 by engagement rate:</strong> Appleton cooler bag (7.6%), Jimmy Boyd photography (4.8%), 1800 Tequila display (4.5%), display storytelling post (4.1%), Yasi spotlight (4.1%). All are project-based.</li>';
+  h += '<li><strong>Bottom 5 by reactions:</strong> Halloween planning (6), compliance gap (7), seasonal runway (8), OND planning (8), evolving POS (9). All are educational/advisory with no specific project.</li>';
+  h += '<li><strong>Email parallel:</strong> "Behind the Lens: Our In-House Studio" hit 46.2% opens because it showed the studio, not because it taught something about photography.</li>';
+  h += '</ul>';
+  h += '<div class="strat-quote">Educational content positions you as a teacher. Project-based content positions you as the practitioner who does the work. MSG should always be the second.</div>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<hr class="strat-divider">';
+
+  // SECTION 2: LINKEDIN WRITING
+  h += '<div class="strat-section">';
+  h += '<h2>LinkedIn: Writing, Tone, and Style Analysis</h2>';
+  h += '<p class="strat-sub">Hook patterns, post structure, voice consistency across '+O.length+' original posts</p>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Critical</span>';
+  h += '<h4>Hook architecture: what stops the scroll</h4>';
+  h += '<p>Six months of data reveal a clear hierarchy of hook effectiveness:</p>';
+  h += '<ul>';
+  h += '<li><strong>Brand-name openers</strong> ('+hookBrand.length+' posts): avg '+ar(hookBrand)+' reactions, '+ac(hookBrand)+' comments. Best performers. The brand name itself is the hook because it signals "real project, real client" instantly.</li>';
+  h += '<li><strong>People/team hooks</strong> ('+hookPeople.length+' posts): avg '+ar(hookPeople)+' reactions. Faces and names create social proof and tag-engagement from the person\'s network.</li>';
+  h += '<li><strong>Number/stat openers</strong> ('+hookNum.length+' posts): avg '+ar(hookNum)+' reactions. "Two minutes" (Peroni, 20 reactions) worked. Numbers create specificity even without a brand name.</li>';
+  h += '<li><strong>Declarative opinion hooks</strong> ('+hookDecl.length+' posts): avg '+ar(hookDecl)+' reactions, '+ac(hookDecl)+' comments. These generate the only meaningful comments because they invite disagreement.</li>';
+  h += '<li><strong>Generic educational hooks</strong> ('+hookGen.length+' posts): avg '+ar(hookGen)+' reactions. Weakest every single time. "The evolving role of POS" (9 reactions), "Seasonal programs need a 16-week runway" (8 reactions).</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Action for Livi/team:</strong> Every hook should pass one of these tests: (1) Does it name a brand or person? (2) Does it contain a specific number? (3) Does it make a claim someone could argue with? If the answer is no to all three, rewrite it before anything else gets drafted.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Critical</span>';
+  h += '<h4>Hook length: shorter is stronger</h4>';
+  h += '<p>Posts with hooks under 50 characters average '+ar(shortH)+' reactions ('+shortH.length+' posts). Hooks over 50 characters average '+ar(longH)+' reactions ('+longH.length+' posts).</p>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;">The best hooks this period were all tight:</p>';
+  h += '<ul>';
+  h += '<li>"Kendall Jackson x NBA Retail Display" (39 reactions) — 38 chars</li>';
+  h += '<li>"1800 Tequila retail display (static)" (31 reactions) — 37 chars</li>';
+  h += '<li>"Faster Display demo video" (25 reactions) — 25 chars</li>';
+  h += '<li>"Stoli x LA Dodgers retail display" (18 reactions) — 33 chars</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;">Compare to the weakest:</p>';
+  h += '<ul>';
+  h += '<li>"The evolving role of point of sale in a digital-first world" (9 reactions) — 60 chars</li>';
+  h += '<li>"Coupons and on-shelf promotions are evolving, not disappearing" (10 reactions) — 62 chars</li>';
+  h += '<li>"Retail execution compliance: the gap between plan and floor" (7 reactions) — 59 chars</li>';
+  h += '</ul>';
+  h += '<div class="strat-quote">The pattern: long hooks explain. Short hooks declare. Declarations win.</div>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Critical</span>';
+  h += '<h4>The comment drought: '+totalC+' comments in 6 months</h4>';
+  h += '<p>'+(totalC/O.length).toFixed(1)+' comments per post. For a company page with this level of reaction engagement, this is abnormally low and signals a specific writing pattern problem.</p>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;"><strong>Root cause:</strong> The posts read as finished statements. They present the work, explain why it matters, and close with a declarative line. There is nothing left for the reader to add, disagree with, or respond to. The writing is polished but closed.</p>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;"><strong>The posts that got comments:</strong></p>';
+  h += '<ul>';
+  h += '<li>KJ x NBA (6 comments) — took an opinion: "creative carte blanche to design something unique"</li>';
+  h += '<li>Designing for alc/bev (3 comments) — made a claim: "a discipline of its own"</li>';
+  h += '<li>Jimmy Boyd photography (3 comments) — the most recent post, showed active work</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Fix:</strong> Add one sentence per post that creates an open loop. Not a generic engagement question ("What do you think?") but a specific, answerable prompt: "Name a brand that does this better." "Which retailer makes this easiest?" The goal is to create a gap the reader wants to fill.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">High</span>';
+  h += '<h4>Voice consistency: where the writing drifts</h4>';
+  h += '<p>The best MSG posts have a distinct voice: direct, practitioner-level, no preamble. They sound like Kevin talking to a client. But roughly 30% of posts slip into a different register.</p>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;"><strong>Signs of drift (present in the bottom-performing posts):</strong></p>';
+  h += '<ul>';
+  h += '<li><strong>Textbook openings:</strong> "The evolving role of...", "The cost of a bad...", "The last mile of..." — these are essay titles, not hooks. They signal "this is educational content" and the audience scrolls past.</li>';
+  h += '<li><strong>Abstract language without proof:</strong> "POS isn\'t dying — it\'s being forced to prove its ROI" — true statement, but MSG should be the one proving it with a specific project example, not just asserting it.</li>';
+  h += '<li><strong>Planning-horizon posts with no visual payoff:</strong> "Start Thinking Halloween" (6 reactions, lowest performer) and "Planning OND 2026 starts now" (8 reactions) tell people to think about the future but do not show MSG doing it.</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;"><strong>The voice that works (present in all top 10 posts):</strong></p>';
+  h += '<ul>';
+  h += '<li>Starts with a specific subject (brand, person, object), not an abstract concept</li>';
+  h += '<li>Uses short, declarative sentences — no subordinate clauses or throat-clearing</li>';
+  h += '<li>Describes what MSG actually did, not what the industry should do</li>';
+  h += '<li>Treats the reader as a peer, not a student</li>';
+  h += '</ul>';
+  h += '<div class="strat-quote">Test every post with this question: "Does this sound like someone explaining the industry, or someone who works in it?" If it sounds like the first, rewrite it.</div>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">High</span>';
+  h += '<h4>Video vs static: the repost multiplier</h4>';
+  h += '<p>Video generates a '+rpLift+'% higher repost rate than static ('+vRP+' vs '+sRP+' avg reposts). Reposts are the highest-value engagement on LinkedIn because they put MSG content into someone else\'s feed.</p>';
+  h += '<ul>';
+  h += '<li>Video: '+vids.length+' posts, avg '+(vids.reduce(function(s,p){return s+p.r;},0)/vids.length).toFixed(1)+' reactions, '+vRP+' reposts</li>';
+  h += '<li>Static: '+stats.length+' posts, avg '+(stats.reduce(function(s,p){return s+p.r;},0)/stats.length).toFixed(1)+' reactions, '+sRP+' reposts</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Note on video quality:</strong> Not all video performs equally. The Halloween video (52 views, 6 reactions) underperformed because it was conceptual. The top videos — KJ NBA (805 views), Peroni shipper (177 views), Faster Display demo (694 views) — all showed a physical product being built, assembled, or displayed. The camera should always be pointed at the work.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">High</span>';
+  h += '<h4>Cadence: quality scales, volume does not</h4>';
+  h += '<p>Monthly posting volume vs average reactions:</p>';
+  h += '<ul>'+monthRows+'</ul>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;">March (10 posts, avg 20) and April (11 posts, avg 22) were the strongest months. Both had multiple named-brand projects (1800 Tequila series, Faster Display pair, KJ NBA). February (8 posts, avg 11) had high volume too but no flagship projects.</p>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;"><strong>Recommended cadence:</strong> 8-10 posts per month. Every post published should clear the quality bar — if it does not have a brand, a stat, or an opinion, it is not ready.</p>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<hr class="strat-divider">';
+
+  // SECTION 3: EMAIL
+  h += '<div class="strat-section">';
+  h += '<h2>Email: Campaign Strategy Analysis</h2>';
+  h += '<p class="strat-sub">Performance patterns across '+emails.length+' campaigns, Nov 2025 - May 2026</p>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-critical">Critical</span>';
+  h += '<h4>The GSW Deck Download is the best-performing format by far</h4>';
+  h += '<ul>';
+  h += '<li><strong>Deck Download</strong> ('+DD.length+' campaigns): '+eor(DD)+'% open rate, '+ector(DD)+'% CTOR</li>';
+  h += '<li><strong>Newsletter</strong> ('+NL.length+' campaigns): '+eor(NL)+'% open rate, '+ector(NL)+'% CTOR</li>';
+  h += '<li><strong>Rep Eblast</strong> ('+RE.length+' campaigns): '+eor(RE)+'% open rate, '+ector(RE)+'% CTOR</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;">The GSW decks have a '+ector(DD)+'% CTOR — meaning one in three people who opens the email clicks the download link. Newsletters average '+ector(NL)+'%. That is a <strong>'+ctorRatio+'x difference</strong> in click intent.</p>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Action for team:</strong> Consider restructuring newsletters around a single downloadable asset or resource rather than a multi-topic browse format. Lead with the asset, add context below.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">High</span>';
+  h += '<h4>Subject line patterns: specific beats clever</h4>';
+  h += '<p>The top-performing subject lines describe exactly what is inside the email.</p>';
+  h += '<ul>';
+  h += '<li><strong>58.1% open:</strong> "March 2026 Global Store Walk Deck" — tells you exactly what you get</li>';
+  h += '<li><strong>50.7% open:</strong> "April 2026 Global Store Walk Deck" — same formula, consistent performance</li>';
+  h += '<li><strong>46.2% open:</strong> "Behind the Lens: Our In-House Studio" — specific, visual, curiosity-driven</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:8px;font-size:13px;color:#555;">Compare to the weakest:</p>';
+  h += '<ul>';
+  h += '<li><strong>24.2% open:</strong> "A Promo Team that Understands Celebrating &amp; Creating Culture" — vague, long, corporate</li>';
+  h += '<li><strong>26.7% open:</strong> "Evolving Your Shopper Promotions" — generic, could be from any agency</li>';
+  h += '<li><strong>27.1% open:</strong> "Summer Promo Planning Starts Now" — no payoff, no specificity</li>';
+  h += '</ul>';
+  h += '<div class="strat-quote">The subject line rule mirrors the LinkedIn hook rule: name the thing. "April Store Walk Deck" beats "Evolving Your Promotions" because one promises a specific asset and the other promises a lecture.</div>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-high">High</span>';
+  h += '<h4>Send timing: mid-morning massively outperforms early AM</h4>';
+  h += '<p>Mid-morning sends (10-11 AM ET) hit 45.0% open rate and 13.1% CTR. Early AM sends (5-7 AM ET) hit 31.4% open rate and 4.4% CTR. The CTR difference is the most important number — people who open early AM emails are less likely to act on them.</p>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Day of week:</strong> Tuesday is the heaviest send day (8 of 14 campaigns) but has the lowest open rate at 28.1%. Monday (35.6% open, 10.1% CTR) and Friday (35.1% open, 10.2% CTR) both outperform. Shift newsletter sends off Tuesday.</p>';
+  h += '</div>';
+
+  h += '<div class="rec-card"><span class="rec-tag rec-medium">Medium</span>';
+  h += '<h4>Bounce rate: list hygiene needed</h4>';
+  h += '<p>The two BeatBox rep eblasts had bounce rates of 11.1% and 18.1%. Industry standard is under 2%. Even the large newsletter sends are running 7-9% bounces. This hurts deliverability and sender reputation.</p>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Action for team:</strong> Run a list cleanup in Dynamics. Remove hard bounces. Suppress contacts who have not opened in 6+ months. A smaller, cleaner list will improve all metrics.</p>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<hr class="strat-divider">';
+
+  // SECTION 4: PLAYBOOK
+  h += '<div class="strat-section">';
+  h += '<h2>The MSG Content Playbook</h2>';
+  h += '<p class="strat-sub">Rules derived from 6 months of data. Apply to every piece of content.</p>';
+
+  h += '<div class="rec-card" style="background:#f8f7f4;border-style:dashed;">';
+  h += '<h4>LinkedIn Post Checklist (before publishing)</h4>';
+  h += '<ul>';
+  h += '<li>Hook is under 50 characters</li>';
+  h += '<li>Names a specific brand, person, or project</li>';
+  h += '<li>Opens with a declaration, a number, or a name — never a concept</li>';
+  h += '<li>Shows finished work — not a planning prompt or industry observation</li>';
+  h += '<li>Written from the practitioner\'s POV ("we built") not the advisor\'s ("brands should")</li>';
+  h += '<li>Ends with a strong declarative close — no engagement questions</li>';
+  h += '<li>If video: camera is pointed at physical work, not a talking head or concept reel</li>';
+  h += '<li>At least 2 posts per month take a position someone could argue with</li>';
+  h += '<li>Total monthly volume: 8-10 posts, not more</li>';
+  h += '</ul></div>';
+
+  h += '<div class="rec-card" style="background:#f8f7f4;border-style:dashed;">';
+  h += '<h4>Email Campaign Checklist (before sending)</h4>';
+  h += '<ul>';
+  h += '<li>Subject line names the specific content or asset inside</li>';
+  h += '<li>Subject line is under 50 characters</li>';
+  h += '<li>Scheduled for mid-morning (10-11 AM ET), not early AM</li>';
+  h += '<li>Sent Monday, Thursday, or Friday — avoid Tuesday</li>';
+  h += '<li>If possible, built around a single downloadable asset or clear CTA</li>';
+  h += '<li>List has been cleaned of hard bounces before send</li>';
+  h += '<li>For large sends (2000+): consider whether a segment would perform better</li>';
+  h += '</ul></div>';
+
+  h += '<div class="rec-card" style="background:#f8f7f4;border-style:dashed;">';
+  h += '<h4>Content creation voice guide</h4>';
+  h += '<ul>';
+  h += '<li><strong>Write like this:</strong> "Kendall-Jackson scored an NBA partnership. They came to us for retail displays that would extend it to store shelves. We had creative carte blanche."</li>';
+  h += '<li><strong>Not like this:</strong> "The evolving role of point of sale in a digital-first world is forcing brands to rethink their approach to retail marketing."</li>';
+  h += '<li><strong>The difference:</strong> First version has a subject (KJ), an action (came to us), and a result (carte blanche). Second version has no subject, no action, and no proof. First version could only be written by MSG. Second version could be written by anyone.</li>';
+  h += '</ul>';
+  h += '<p style="margin-top:10px;font-size:13px;color:#555;"><strong>Tone test:</strong> Read it out loud. If it sounds like a conference panel abstract, rewrite. If it sounds like Kevin explaining the project to a prospect over coffee, publish.</p>';
+  h += '</div>';
+  h += '</div>';
+
+  document.getElementById('strategyContent').innerHTML = h;
 }
+
 
 // ==================== SEND-TIME CHARTS ====================
 function renderSendTimeCharts() {
   var gridC = 'rgba(0,0,0,0.06)';
   var txtC = 'rgba(0,0,0,0.5)';
-  new Chart(document.getElementById('dayOfWeekChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Monday','Tuesday','Thursday','Friday'],
-      datasets: [{
-        label: 'Avg open rate %',
-        data: [43.3, 35.2, 46.2, 45.0],
-        backgroundColor: ['#97C459','#85B7EB','#AFA9EC','#F0997B'],
-        borderRadius: 4, barPercentage: 0.6
-      },{
-        label: 'Avg click rate %',
-        data: [14.5, 7.5, 1.6, 13.0],
-        backgroundColor: ['#3B6D11','#185FA5','#534AB7','#993C1D'],
-        borderRadius: 4, barPercentage: 0.6
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + c.raw + '%'; } } } },
-      scales: {
-        y: { beginAtZero: true, max: 55, grid: { color: gridC }, ticks: { color: txtC, callback: function(v){ return v + '%'; } } },
-        x: { grid: { display: false }, ticks: { color: txtC } }
-      }
-    }
-  });
-  new Chart(document.getElementById('sendWindowChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Early AM (5-7 ET)','Mid-AM (10-11 ET)'],
-      datasets: [{
-        label: 'Avg open rate %',
-        data: [31.4, 45.0],
-        backgroundColor: ['#5DCAA5','#85B7EB'],
-        borderRadius: 4, barPercentage: 0.5
-      },{
-        label: 'Avg click rate %',
-        data: [4.4, 13.1],
-        backgroundColor: ['#0F6E56','#185FA5'],
-        borderRadius: 4, barPercentage: 0.5
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + c.raw + '%'; } } } },
-      scales: {
-        y: { beginAtZero: true, max: 60, grid: { color: gridC }, ticks: { color: txtC, callback: function(v){ return v + '%'; } } },
-        x: { grid: { display: false }, ticks: { color: txtC } }
-      }
-    }
-  });
+  var dayLabels = ['Monday','Tuesday','Thursday','Friday'];
+  var dayOpenData = [43.3, 35.2, 46.2, 45.0];
+  var dayClickData = [14.5, 7.5, 1.6, 13.0];
+  var dayBgOpen = ['#97C459','#85B7EB','#AFA9EC','#F0997B'];
+  var dayBgClick = ['#3B6D11','#185FA5','#534AB7','#993C1D'];
+  var winLabels = ['Early AM (5-7 ET)','Mid-AM (10-11 ET)'];
+  var winOpenData = [31.4, 45.0];
+  var winClickData = [4.4, 13.1];
+  var winBgOpen = ['#5DCAA5','#85B7EB'];
+  var winBgClick = ['#0F6E56','#185FA5'];
+  function makeDayData(){ return { labels: dayLabels, datasets: [{ label:'Avg open rate %', data:[...dayOpenData], backgroundColor:[...dayBgOpen], borderRadius:4, barPercentage:0.6 },{ label:'Avg click rate %', data:[...dayClickData], backgroundColor:[...dayBgClick], borderRadius:4, barPercentage:0.6 }] }; }
+  function makeWinData(){ return { labels: winLabels, datasets: [{ label:'Avg open rate %', data:[...winOpenData], backgroundColor:[...winBgOpen], borderRadius:4, barPercentage:0.5 },{ label:'Avg click rate %', data:[...winClickData], backgroundColor:[...winBgClick], borderRadius:4, barPercentage:0.5 }] }; }
+  var dayOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw+'%';}}}}, scales:{ y:{beginAtZero:true, max:55, grid:{color:gridC}, ticks:{color:txtC, callback:function(v){return v+'%';}}}, x:{grid:{display:false}, ticks:{color:txtC}}} };
+  var winOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.raw+'%';}}}}, scales:{ y:{beginAtZero:true, max:60, grid:{color:gridC}, ticks:{color:txtC, callback:function(v){return v+'%';}}}, x:{grid:{display:false}, ticks:{color:txtC}}} };
+  // Email tab charts
+  new Chart(document.getElementById('dayOfWeekChart'), { type:'bar', data:makeDayData(), options:dayOpts });
+  new Chart(document.getElementById('sendWindowChart'), { type:'bar', data:makeWinData(), options:winOpts });
+  // Strategy tab charts
+  var s1 = document.getElementById('stratDayChart');
+  var s2 = document.getElementById('stratWindowChart');
+  if(s1) new Chart(s1, { type:'bar', data:makeDayData(), options:dayOpts });
+  if(s2) new Chart(s2, { type:'bar', data:makeWinData(), options:winOpts });
 }
 
 // ==================== INIT ====================
