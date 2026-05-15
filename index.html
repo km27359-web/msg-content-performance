@@ -640,16 +640,16 @@ function renderEmails() {
   gridEl.innerHTML = '';
   new gridjs.Grid({
     columns: [
-      { name: 'Date', width: '90px', sort: true },
-      { name: 'Campaign', width: '200px' },
-      { name: 'Type', width: '100px' },
-      { name: 'Sent', width: '70px', sort: true },
-      { name: 'Opens', width: '70px', sort: true },
-      { name: 'Open %', width: '70px', sort: true },
-      { name: 'Clicks', width: '70px', sort: true },
-      { name: 'CTOR', width: '65px' },
-      { name: 'Bounces', width: '70px' },
-      { name: 'Status', width: '80px' }
+      { name: 'Date', width: '95px', sort: true },
+      { name: 'Campaign', width: '240px' },
+      { name: 'Type', width: '110px' },
+      { name: 'Sent', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'Opens', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'Open %', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'Clicks', width: '75px', sort: true, attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'CTOR', width: '70px', attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'Bounces', width: '75px', attributes: (cell) => ({style:'text-align:right'}) },
+      { name: 'Status', width: '90px' }
     ],
     data: emails.sort((a,b) => new Date(b.date) - new Date(a.date)).map(e => {
       const del = e.delivered || (e.recipients - (e.bounces||0));
@@ -657,12 +657,12 @@ function renderEmails() {
       e.date || '-',
       e.name,
       e.type || '-',
-      e.recipients,
-      e.opens,
+      e.recipients.toLocaleString(),
+      e.opens.toLocaleString(),
       del ? Math.round(e.opens/del*100) + '%' : '-',
-      e.clicks,
+      e.clicks.toLocaleString(),
       e.opens ? Math.round(e.clicks/e.opens*100) + '%' : '-',
-      e.bounces || 0,
+      (e.bounces || 0).toLocaleString(),
       e.status || 'Completed'
     ]}),
     sort: true,
